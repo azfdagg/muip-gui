@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Server Control Panel</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; margin: 0; height: 100vh; background-color: #121212; color: #e0e0e0; overflow: hidden; }
+        .sidebar { width: 280px; background-color: #1a1a1a; padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 10; }
+        .sidebar h3 { color: #ffffff; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 0; }
+        .sidebar button { background: transparent; color: #a0a0a0; border: 1px solid transparent; padding: 12px 15px; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .sidebar button:hover { background: #252525; color: #ffffff; }
+        .sidebar button.active { background: #00439c; color: #ffffff; border: 1px solid #0056c6; }
+        
+        .main-container { flex: 1; display: flex; flex-direction: column; height: 100%; background-color: #141414; }
+        .header { background-color: #1a1a1a; padding: 15px 25px; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; font-size: 20px; font-weight: 500; color: #fff; }
+        .global-uid-box { display: flex; align-items: center; gap: 10px; background: #222; padding: 6px 12px; border-radius: 6px; border: 1px solid #333; }
+        .global-uid-box label { font-size: 13px; color: #aaa; }
+        .global-uid-box input { background: #141414; border: 1px solid #444; color: #fff; padding: 4px 8px; width: 90px; border-radius: 4px; font-family: monospace; font-size: 14px; text-align: center; }
+        
+        .content-area { flex: 1; padding: 25px; overflow-y: auto; display: none; }
+        .content-area.active { display: block; }
+        
+        .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #1c1c1c; border: 1px solid #2d2d2d; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .card h4 { margin-top: 0; margin-bottom: 15px; color: #fff; font-size: 16px; font-weight: 500; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; color: #aaa; }
+        .form-group input, .form-group select, .form-group textarea { background: #252525; border: 1px solid #3d3d3d; color: #fff; padding: 10px; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: #00439c; }
+        
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .action-btn { background: #00439c; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; font-weight: 500; }
+        .action-btn:hover { background: #0056c6; }
+        .action-btn.secondary { background: #2a2a2a; border: 1px solid #444; color: #ccc; }
+        .action-btn.secondary:hover { background: #333; color: #fff; }
+        .action-btn.danger { background: #802020; }
+        .action-btn.danger:hover { background: #a03030; }
+        
+        .terminal-box { height: 220px; background: #0b0b0b; border-top: 1px solid #252525; display: flex; flex-direction: column; font-family: 'Courier New', Courier, monospace; }
+        .terminal-header { background: #161616; padding: 8px 20px; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .terminal-output { flex: 1; padding: 15px; overflow-y: auto; font-size: 13px; line-height: 1.5; color: #39ff14; }
+        .log-entry { margin-bottom: 8px; border-left: 3px solid #39ff14; padding-left: 8px; white-space: pre-wrap; }
+        .log-entry.err { color: #ff3333; border-color: #ff3333; }
+        .log-entry.info { color: #00bfff; border-color: #00bfff; }
+        
+        .search-table-wrapper { max-height: 400px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #161616; }
+        .search-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        .search-table th, .search-table td { padding: 10px 15px; border-bottom: 1px solid #2d2d2d; }
+        .search-table th { background: #1f1f1f; color: #aaa; font-weight: 500; position: sticky; top: 0; }
+        .search-table tr:hover { background: #222; }
+        
+        .quick-badge { background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s; }
+        .quick-badge:hover { background: #00439c; border-color: #0056c6; }
+
+        /* Стили для блока квестов */
+        .quest-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .quest-btn { padding: 12px; border-radius: 6px; border: 1px solid #444; background: #252525; color: #e0e0e0; cursor: pointer; transition: all 0.2s; font-weight: 500; text-align: center; }
+        .quest-btn:hover { background: #333; border-color: #666; }
+        .quest-btn.accept { border-color: #1d7a3a; color: #7ddf9a; }
+        .quest-btn.accept:hover { background: #1d7a3a; color: #fff; }
+        .quest-btn.finish { border-color: #c97d0e; color: #f5b342; }
+        .quest-btn.finish:hover { background: #c97d0e; color: #fff; }
+        .quest-btn.add { border-color: #2a6a8a; color: #6ac0ff; }
+        .quest-btn.add:hover { background: #2a6a8a; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>Панель Управления</h3>
+        <button onclick="switchTab('tab-gm')" id="btn-tab-gm" class="active">⚡ Быстрые GM команды</button>
+	    <button onclick="switchTab('tab-mail')" id="btn-tab-mail">📧 Отправить почту</button>
+        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact">⚔️ Выдать артефакт</button>
+        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn">🐉 Спавн</button>
+        <button onclick="switchTab('tab-muip')" id="btn-tab-muip">⚙️ Все MUIP функции</button>
+        <button onclick="switchTab('tab-handbook')" id="btn-tab-handbook">📖 Книга ID (Handbook)</button>
+        <button onclick="switchTab('tab-settings')" id="btn-tab-settings">🔧 Настройки конфига</button>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h2 id="current-title">Быстрые GM Команды</h2>
+            <div class="global-uid-box">
+                <label for="global-uid">Глобальный UID игрока:</label>
+                <input type="text" id="global-uid" value="1337" onchange="syncUidChange()">
+            </div>
+        </div>
+
+
+
+
+        <div id="tab-artifact" class="content-area">
+            <!-- КАРТОЧКА 1: Быстрый ввод команды -->
+            <div class="card" style="background: #161616; border-color: #00439c;">
+                <h4>📋 Быстрый ввод команды</h4>
+                <div class="form-group">
+                    <label>Вставьте команду в формате:</label>
+                    <input type="text" id="artifact-parse-input" placeholder='/give 76544 lv20 x1 15001 501034,2 501054,1 501234,2 501244,2' onkeydown="if(event.key==='Enter') parseArtifactCommand()">
+                </div>
+                <button class="action-btn" onclick="parseArtifactCommand()" style="width: 100%;">🔄 Распарсить и заполнить</button>
+                <div style="font-size: 12px; color: #888; margin-top: 8px;">
+                    💡 Поддерживается формат: <code>/give [ID_артефакта] lv[уровень] x[количество] [основная_стата] [стата1],[значение] [стата2],[значение] ...</code>
+                </div>
+            </div>
+
+            <!-- КАРТОЧКА 2: Основные параметры -->
+            <div class="card">
+                <h4>⚔️ Параметры артефакта (Важно! Артефакты на старых версиях не выдаются с кастомным уровнем и характеристиками!)</h4>
+                <div class="form-group">
+                    <label>UID получателя:</label>
+                    <input type="text" id="artifact-uid" value="1">
+                </div>
+                <div class="form-group">
+                    <label>ID артефакта (из справочника):</label>
+                    <input type="text" id="artifact-id" placeholder="76544">
+                </div>
+                <div class="form-group">
+                    <label>Уровень артефакта (0-21, где 21 = макс. 20):</label>
+                    <input type="number" id="artifact-level" value="21" min="0" max="21">
+                </div>
+                <div class="form-group">
+                    <label>Основная характеристика (main_prop_id):</label>
+                    <input type="text" id="artifact-main-prop" placeholder="15001">
+                </div>
+            </div>
+
+            <!-- КАРТОЧКА 3: Второстепенные характеристики -->
+            <div class="card" style="background: #161616;">
+                <h4>📊 Второстепенные характеристики</h4>
+                <p style="color: #888; font-size: 12px; margin-bottom: 10px;">
+                    Введите ID характеристик через запятую. Например: 501034,501054,501234,501244
+                </p>
+                <div class="form-group">
+                    <label>ID характеристик (через запятую):</label>
+                    <input type="text" id="artifact-sub-stats" placeholder="501034,501054,501234,501244">
+                </div>
+                <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                    💡 Всего можно добавить до 4 характеристик.
+                </div>
+            </div>
+
+            <!-- КАРТОЧКА 4: Поиск артефактов -->
+            <div class="card" style="background: #161616;">
+                <h4>🔍 Поиск артефактов</h4>
+                <div class="form-group">
+                    <label>Поиск артефакта по ID или названию из справочника:</label>
+                    <input type="text" id="artifact-search" placeholder="Введите ID или название..." oninput="filterArtifactItems()">
+                </div>
+                <div id="artifact-search-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                    <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>
+                </div>
+                <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    Нажмите на найденный артефакт, чтобы подставить его ID.
+                </div>
+            </div>
+
+            <!-- КАРТОЧКА 5: Кнопка отправки (отдельная карточка) -->
+            <div class="card" style="background: transparent; border: none; box-shadow: none; padding: 0;">
+                <button class="action-btn" onclick="sendArtifact()" style="width: 100%; padding: 15px; font-size: 16px;">⚔️ Выдать артефакт</button>
+            </div>
+        </div>
+
+
+
+        <div id="tab-mail" class="content-area">
+            <div class="card">
+                <h4>📧 Отправить почту (MUIP 1005)</h4>
+                <div class="form-group">
+                    <label>UID получателя:</label>
+                    <input type="text" id="mail-uid" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Заголовок письма:</label>
+                    <input type="text" id="mail-title" placeholder="Введите заголовок">
+                </div>
+                <div class="form-group">
+                    <label>Содержание:</label>
+                    <textarea id="mail-content" rows="3" placeholder="Введите текст письма..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Отправитель:</label>
+                    <input type="text" id="mail-sender" placeholder="Имя отправителя">
+                </div>
+                <div class="form-group">
+                    <label>Время истечения (секунды от 1970):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="mail-expire" placeholder="Вручную..." style="flex: 1; min-width: 200px;">
+                        <button class="action-btn secondary" onclick="setExpireTime(86400)">1 день</button>
+                        <button class="action-btn secondary" onclick="setExpireTime(604800)">1 неделя</button>
+                        <button class="action-btn secondary" onclick="setExpireTime(2592000)">1 месяц</button>
+                        <button class="action-btn secondary" onclick="setExpireTime(31536000)">1 год</button>
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                        🔹 Текущее время в секундах: <span id="mail-current-time">--</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Важность:</label>
+                    <input type="number" id="mail-importance" value="0" min="0">
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label>config_id (обычно 0):</label>
+                    <input type="number" id="mail-config-id" value="0">
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label>item_limit_type (обычно 0):</label>
+                    <input type="number" id="mail-item-limit-type" value="0">
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label>tag (обычно 0):</label>
+                    <input type="number" id="mail-tag" value="0">
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label>source_type (обычно 0):</label>
+                    <input type="number" id="mail-source-type" value="0">
+                </div>
+                
+                <div class="card" style="background: #161616; margin-top: 15px;">
+                    <h4>📦 Вложения (item_list)</h4>
+                    <div class="form-group">
+                        <label>Поиск предмета по ID или названию из справочника:</label>
+                        <input type="text" id="mail-item-search" placeholder="Введите ID или название..." oninput="filterMailItems()">
+                    </div>
+                    <div id="mail-handbook-results" style="max-height: 150px; overflow-y: auto; margin-bottom: 10px; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                        <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <label style="white-space: nowrap;">Количество:</label>
+                        <input type="number" id="mail-item-count" value="1" min="1" style="width: 80px;">
+                        <button class="action-btn" onclick="addMailItem()">➕ Добавить вложение</button>
+                        <button class="action-btn danger" onclick="clearMailItems()">🗑️ Очистить всё</button>
+                    </div>
+                    <div id="mail-item-list" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                        <!-- Сюда будут добавляться предметы -->
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                        ID предмета: <span id="selected-mail-item-id">--</span> | 
+                        Название: <span id="selected-mail-item-name">--</span>
+                    </div>
+                </div>
+
+                <button class="action-btn" onclick="sendMail()" style="margin-top: 20px; width: 100%; padding: 15px;">✉️ Отправить письмо</button>
+            </div>
+        </div>
+
+        <div id="tab-spawn" class="content-area">
+            <div class="card">
+                <h4>🐉 Управление монстрами (MUIP 1116)</h4>
+                <div class="form-group">
+                    <label>ID Монстра:</label>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="monster-id-input" placeholder="Например: 20010101" style="flex: 2; min-width: 200px;">
+                        <button class="action-btn secondary" onclick="document.getElementById('monster-id-input').value=''">✖</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Количество:</label>
+                    <input type="number" id="monster-count-input" value="1" min="1" style="width: 120px;">
+                </div>
+                <div class="form-group">
+                    <label>Уровень (необязательно, 0 = стандартный):</label>
+                    <input type="number" id="monster-level-input" value="0" min="0" style="width: 120px;">
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0 15px 0;">
+                    <button class="action-btn" onclick="spawnMonster()">➕ Спавн</button>
+                    <button class="action-btn danger" onclick="killMonster()">💀 Убить выбранного</button>
+                    <button class="action-btn danger" style="background: #8B0000;" onclick="killAllMonsters()">☠️ Убить всех</button>
+                </div>
+                
+                <hr style="border-color: #2d2d2d; margin: 20px 0;">
+                
+                <h4>🔍 Поиск монстра</h4>
+                <div class="form-group">
+                    <label>Фильтр (ID или название):</label>
+                    <input type="text" id="monster-search-input" placeholder="Начните вводить ID или имя монстра..." oninput="filterMonsterHandbook()">
+                </div>
+                <div id="monster-search-results" style="max-height: 300px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px; margin-top: 5px;">
+                    <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска монстров...</div>
+                </div>
+                <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    Нажмите на монстра, чтобы подставить его ID.
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab-gm" class="content-area active">
+            <div class="grid-two">
+                <div>
+                    <div class="card">
+                        <h4>Прямой GM ввод (Команда 1116)</h4>
+                        <div class="form-group">
+                            <label>Введите команду (без косой черты / ):</label>
+                            <input type="text" id="raw-gm-cmd" placeholder="item add 201 10000" onkeydown="if(event.key==='Enter') executeRawGm()">
+                        </div>
+                        <button class="action-btn" onclick="executeRawGm()">Отправить на сервер</button>
+                    </div>
+
+                    <div class="card">
+                        <h4>Быстрые переключатели действий</h4>
+                        <div class="btn-row">
+                            <button class="quick-badge" onclick="quickGm('wudi global avatar on')">🛡️ Режим бога ВКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('wudi global avatar off')">❌ Режим бога ВЫКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('energy infinite on')">🌀 Энергия без КД ВКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('energy infinite off')">🌀 Энергия без КД ВЫКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('stamina infinite on')">🏃 Бесконечная стамина</button>
+                            <button class="quick-badge" onclick="quickGm('stamina infinite off')">🏃 Бесконечная стамина ВЫКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('talent unlock all')">✨ Открыть все созвездия</button>
+                            <button class="quick-badge" onclick="quickGm('point 3 all')">🗺️ Расблокировать все точки ТП (3)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <h4>Сохранить команду</h4>
+                        <div class="form-group" style="flex-direction:row; gap:10px;">
+                            <input type="text" id="new-custom-cmd" placeholder="avatar add 10000002" style="flex:1;">
+                            <button class="action-btn" onclick="addCustomCommand()">Сохранить</button>
+                        </div>
+                        <div id="custom-commands-list" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-top:10px;">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- НОВЫЙ БЛОК: Управление квестами -->
+        <div class="card" style="margin-top: 10px;">
+            <h4>📋 Управление квестами</h4>
+            <div class="form-group" style="flex-direction:row; gap:10px; align-items:center; flex-wrap:wrap;">
+                <label style="white-space:nowrap; font-weight:500;">ID квеста:</label>
+                <div style="display:flex; align-items:center; gap:5px; flex:1; min-width:180px; max-width:280px;">
+                       <input type="text" id="quest-id-input" placeholder="30904" style="flex:1; min-width:100px;">
+                       <button class="action-btn secondary" style="padding:4px 10px; font-size:12px; flex-shrink:0;" onclick="document.getElementById('quest-id-input').value=''">✖</button>
+                   </div>
+                   <div class="quest-grid" style="flex:2; min-width:300px;">
+                       <button class="quest-btn add" onclick="questAction('add')">➕ Добавить</button>
+                       <button class="quest-btn accept" onclick="questAction('accept')">📥 Принять</button>
+                       <button class="quest-btn finish" onclick="questAction('finish')">🏁 Завершить</button>
+                   </div>
+               </div>
+               <div id="quest-status" style="font-size:12px; color:#aaa; margin-top:6px;">💡 Текущий ID: <span id="current-quest-id-display" style="color:#fff; font-weight:bold;">—</span></div>
+               <div style="font-size:12px; color:#888; margin-top:4px;">
+                   💡 <strong>Примеры:</strong> add 30904 (добавить квест) |Обычно, команда add не работает, пользуйтесь accept|, accept 30904 (принять), finish 30904 (завершить).
+                   Для сложных команд вводите напрямую: <code>finishv2 123</code>, <code>clear pquest</code> и т.д. (Как написано в хэндбуке)
+                   </div>
+                </div>
+        <!-- КОНЕЦ БЛОКА КВЕСТОВ -->
+            </div>
+
+        <div id="tab-muip" class="content-area">
+            <div class="card">
+                <h4>Доступные системные обработчики</h4>
+                <div class="form-group">
+                    <label>Выберите нужную MUIP команду:</label>
+                    <select id="muip-cmd-select" onchange="renderMuipForm()">
+                        <option value="">-- Выберите команду --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="muip-form-card" class="card" style="display:none;">
+                <h4 id="muip-form-title">Параметры операции</h4>
+                <div id="muip-dynamic-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    </div>
+                <button class="action-btn" onclick="executeMuipCommand()">Выполнить операцию</button>
+            </div>
+        </div>
+
+        <div id="tab-handbook" class="content-area">
+            <div class="card">
+                <h4>Поиск по хэндбуку</h4>
+                <div class="form-group">
+                    <label>Фильтр названий или числовых ID:</label>
+                    <input type="text" id="handbook-search-input" placeholder="Начните вводить имя, название предмета или ID..." oninput="filterHandbook()">
+                </div>
+                
+                <div class="search-table-wrapper">
+                    <table class="search-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 150px;">ID Объекта</th>
+                                <th>Описание наименования</th>
+                                <th style="width: 220px; text-align: right;">Быстрые действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="handbook-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="content-area">
+            <div class="card">
+                <h4>Конфигурация окружения</h4>
+                <p>Все запросы подписываются автоматически. Параметры связи с сервером извлечены из <code>data/config.json</code>:</p>
+                <div style="background: #222; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #aaa; line-height: 1.6;">
+                    <div><strong>Регион:</strong> dev_docker</div>
+                    <div><strong>Целевой URL MUIP:</strong> http://127.0.0.1:21051/api</div>
+                    <div><strong>Автоподпись:</strong> Включена (SHA256 Сортировка)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="terminal-box">
+            <div class="terminal-header">
+                <span>ЖУРНАЛ ОТВЕТОВ MUIP СЕРВЕРА</span>
+                <button class="action-btn secondary" style="padding: 2px 8px; font-size: 11px;" onclick="clearTerminal()">Очистить</button>
+            </div>
+            <div id="terminal-output" class="terminal-output">
+                <div class="log-entry info">[Система] Панель контроля запущена и ожидает команд.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let state = { uid: "1337", custom_commands: [] };
+        let muipSchema = {};
+        let fullHandbookList = [];
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadState();
+            await loadSchema();
+ 	        initMailTab();
+            initArtifactTab();
+        });
+
+        async function loadState() {
+            try {
+                const res = await fetch('/api/state');
+                state = await res.json();
+                document.getElementById('global-uid').value = state.uid || "1337";
+                renderCustomCommands();
+            } catch (e) {
+                logToTerminal("Ошибка синхронизации состояния: " + e, "err");
+            }
+        }
+
+        async function saveState() {
+            try {
+                await fetch('/api/state', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(state)
+                });
+            } catch (e) {
+                logToTerminal("Ошибка сохранения состояния: " + e, "err");
+            }
+        }
+
+        function syncUidChange() {
+            state.uid = document.getElementById('global-uid').value.trim();
+            saveState();
+            logToTerminal(`Глобальный UID переключен на: ${state.uid}`, "info");
+            
+            document.querySelectorAll('.dyn-param-input').forEach(input => {
+                if(['uid', 'player_uid', 'gm_uid'].includes(input.dataset.param)) {
+                    input.value = state.uid;
+                }
+            });
+        }
+
+        async function loadSchema() {
+            try {
+                const res = await fetch('/api/schema');
+                const data = await res.json();
+                muipSchema = data.muip || {};
+                fullHandbookList = data.handbook || [];
+		filteredMailHandbook = fullHandbookList;
+                
+                const select = document.getElementById('muip-cmd-select');
+                select.innerHTML = '<option value="">-- Выберите команду --</option>';
+                
+                Object.keys(muipSchema).sort((a,b) => parseInt(a) - parseInt(b)).forEach(cmdId => {
+                    const option = document.createElement('option');
+                    option.value = cmdId;
+                    option.textContent = `${cmdId} - ${muipSchema[cmdId].name}`;
+                    select.appendChild(option);
+                });
+
+                renderHandbookTable(fullHandbookList.slice(0, 100));
+            } catch (e) {
+                logToTerminal("Ошибка разбора схемы метаданных: " + e, "err");
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.content-area').forEach(area => area.classList.remove('active'));
+            document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            if(document.getElementById('btn-' + tabId)) {
+                document.getElementById('btn-' + tabId).classList.add('active');
+            }
+
+            const titleMap = {
+                'tab-gm': 'Быстрые GM Команды',
+                'tab-muip': 'Все MUIP Функции Напрямую',
+                'tab-handbook': 'Книга Справочник ID (Handbook)',
+                'tab-settings': 'Настройки Конфигурации',
+                'tab-mail': '📧 Отправить почту (MUIP 1005)',
+                'tab-artifact': '⚔️ Выдать артефакт (MUIP 1127)',
+                'tab-spawn': '🐉 Спавн монстров (MUIP 1116)'
+            };
+            document.getElementById('current-title').textContent = titleMap[tabId] || tabId;
+        }
+
+        function logToTerminal(msg, type = "success") {
+            const terminal = document.getElementById('terminal-output');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg}`;
+            terminal.appendChild(entry);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminal-output').innerHTML = '';
+        }
+
+        async function sendMuipRequest(cmdId, params = {}) {
+            try {
+                const response = await fetch('/api/execute_muip', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ cmd_id: cmdId, params: params })
+                });
+                const resData = await response.json();
+                
+                if (resData.retcode === 0) {
+                    logToTerminal(resData.data || resData.raw_response);
+                } else {
+                    logToTerminal("Сервер вернул ошибку: " + resData.message, "err");
+                }
+            } catch (e) {
+                logToTerminal("Сетевой сбой отправки: " + e, "err");
+            }
+        }
+
+        function executeRawGm() {
+            const input = document.getElementById('raw-gm-cmd');
+            const cmdText = input.value.trim();
+            if(!cmdText) return;
+            quickGm(cmdText);
+            input.value = '';
+        }
+
+        function quickGm(commandString) {
+            sendMuipRequest('1116', {
+                'uid': document.getElementById('global-uid').value,
+                'msg': commandString
+            });
+        }
+
+        // === УПРАВЛЕНИЕ КВЕСТАМИ ===
+function questAction(action) {
+    const questId = document.getElementById('quest-id-input').value.trim();
+    if (!questId) {
+        logToTerminal("⚠️ Введите ID квеста.", "err");
+        return;
+    }
+    document.getElementById('current-quest-id-display').textContent = questId;
+    
+    const lower = questId.toLowerCase();
+    if (lower.startsWith('finishv2') || lower.startsWith('finish ') || lower.startsWith('clear ') || lower.startsWith('add ') || lower.startsWith('accept ')) {
+        quickGm(questId);
+        return;
+    }
+    let cmd = '';
+    if (action === 'add') cmd = `quest add ${questId}`;
+    else if (action === 'accept') cmd = `quest accept ${questId}`;
+    else if (action === 'finish') cmd = `quest finish ${questId}`;
+    else {
+        logToTerminal("⚠️ Неизвестное действие: " + action, "err");
+        return;
+    }
+    quickGm(cmd);
+}
+        // === КОНЕЦ УПРАВЛЕНИЯ КВЕСТАМИ ===
+
+
+
+        function renderCustomCommands() {
+            const container = document.getElementById('custom-commands-list');
+            container.innerHTML = '';
+            if(!state.custom_commands || state.custom_commands.length === 0) {
+                container.innerHTML = '<div style="color:#555; font-size:13px; text-align:center; padding:10px;">Нет сохраненных команд</div>';
+                return;
+            }
+            state.custom_commands.forEach((cmd, idx) => {
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.gap = '5px';
+                div.innerHTML = `
+                    <button class="action-btn secondary" style="flex:1; text-align:left; font-family:monospace; font-size:13px;" onclick="quickGm('${cmd}')">${cmd}</button>
+                    <button class="action-btn danger" style="padding:8px 12px;" onclick="deleteCustomCommand(${idx})">✖</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addCustomCommand() {
+            const input = document.getElementById('new-custom-cmd');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            if(!state.custom_commands) state.custom_commands = [];
+            if(!state.custom_commands.includes(text)) {
+                state.custom_commands.push(text);
+                saveState();
+                renderCustomCommands();
+            }
+            input.value = '';
+        }
+
+        function deleteCustomCommand(idx) {
+            state.custom_commands.splice(idx, 1);
+            saveState();
+            renderCustomCommands();
+        }
+
+        function renderMuipForm() {
+            const cmdId = document.getElementById('muip-cmd-select').value;
+            const formCard = document.getElementById('muip-form-card');
+            const inputsContainer = document.getElementById('muip-dynamic-inputs');
+            
+            if(!cmdId) {
+                formCard.style.display = 'none';
+                return;
+            }
+            
+            const commandInfo = muipSchema[cmdId];
+            document.getElementById('muip-form-title').textContent = `${commandInfo.name} (Команда ${cmdId})`;
+            inputsContainer.innerHTML = '';
+            
+            const currentUid = document.getElementById('global-uid').value;
+
+            if(!commandInfo.params || commandInfo.params.length === 0 || commandInfo.params[0] === "") {
+                inputsContainer.innerHTML = '<div style="grid-column: span 2; color:#888; font-size:14px; text-align:center;">У обработчика нет настраиваемых аргументов.</div>';
+            } else {
+                commandInfo.params.forEach(paramName => {
+                    const cleanParamName = paramName.replace('[', '').replace(']', '').split(' ')[0].trim();
+                    const group = document.createElement('div');
+                    group.className = 'form-group';
+                    
+                    let defaultValue = "";
+                    if(['uid', 'player_uid', 'gm_uid'].includes(cleanParamName)) {
+                        defaultValue = currentUid;
+                    }
+                    
+                    group.innerHTML = `
+                        <label>${paramName}:</label>
+                        <input type="text" class="dyn-param-input" data-param="${cleanParamName}" value="${defaultValue}">
+                    `;
+                    inputsContainer.appendChild(group);
+                });
+            }
+            formCard.style.display = 'block';
+        }
+
+        function executeMuipCommand() {
+            const cmdId = document.getElementById('muip-cmd-select').value;
+            if(!cmdId) return;
+            
+            const params = {};
+            document.querySelectorAll('.dyn-param-input').forEach(input => {
+                params[input.dataset.param] = input.value.trim();
+            });
+            sendMuipRequest(cmdId, params);
+        }
+
+        function renderHandbookTable(items) {
+            const tbody = document.getElementById('handbook-table-body');
+            tbody.innerHTML = '';
+            
+            if(items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#555;">Совпадений нет</td></tr>';
+                return;
+            }
+            
+            items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-family: monospace; font-weight: bold; color: #00bfff;">${item.id}</td>
+                    <td>${item.name}</td>
+                    <td style="text-align: right;">
+                        <button class="quick-badge" style="background:#00439c;" onclick="giveHandbookItem('${item.id}', 1)">Дать 1 шт</button>
+                        <button class="quick-badge" style="background:#222;" onclick="giveHandbookItem('${item.id}', 100)">x100</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterHandbook() {
+            const query = document.getElementById('handbook-search-input').value.toLowerCase().trim();
+            if(!query) {
+                renderHandbookTable(fullHandbookList.slice(0, 100));
+                return;
+            }
+            const filtered = fullHandbookList.filter(item => {
+                return item.id.toString().includes(query) || item.name.toLowerCase().includes(query);
+            });
+            renderHandbookTable(filtered.slice(0, 100));
+        }
+
+        function giveHandbookItem(itemId, count = 1) {
+            let gmMsg = `item add ${itemId} ${count}`;
+            if (itemId.length === 8 && itemId.startsWith("10")) {
+                gmMsg = `avatar add ${itemId}`;
+            }
+            quickGm(gmMsg);
+        }
+
+        // ============================================
+        // ФУНКЦИИ ДЛЯ ВЫДАЧИ АРТЕФАКТОВ
+        // ============================================
+
+        function initArtifactTab() {
+            // Устанавливаем значения по умолчанию
+            document.getElementById('artifact-uid').value = document.getElementById('global-uid').value || '1';
+            document.getElementById('artifact-id').value = '';
+            document.getElementById('artifact-level').value = '21';
+            document.getElementById('artifact-main-prop').value = '';
+            document.getElementById('artifact-sub-stats').value = '';
+        }
+
+        function parseArtifactCommand() {
+            const input = document.getElementById('artifact-parse-input').value.trim();
+            if (!input) {
+                alert('⚠️ Введите команду для парсинга.');
+                return;
+            }
+
+            // Убираем /give в начале если есть
+            let cmd = input;
+            if (cmd.startsWith('/give ')) {
+                cmd = cmd.substring(6);
+            } else if (cmd.startsWith('give ')) {
+                cmd = cmd.substring(5);
+            }
+
+            // Разбиваем на части
+            const parts = cmd.split(/\s+/);
+            
+            // Ищем ID артефакта (первый токен, который число от 70000 до 79999)
+            let artifactId = null;
+            let level = 21;
+            let count = 1;
+            let mainProp = null;
+            let subStats = [];
+
+            for (let i = 0; i < parts.length; i++) {
+                const token = parts[i].toLowerCase();
+                
+                // Проверяем на ID артефакта
+                if (!artifactId && /^\d{5,6}$/.test(parts[i]) && parseInt(parts[i]) >= 70000 && parseInt(parts[i]) <= 79999) {
+                    artifactId = parts[i];
+                    continue;
+                }
+
+                // Проверяем на уровень: lv20 или lv21
+                if (token.startsWith('lv') || token.startsWith('lvl')) {
+                    const num = token.replace(/^lv/, '').replace(/^lvl/, '');
+                    if (num && !isNaN(num)) {
+                        level = parseInt(num);
+                        // Если lv20, то преобразуем в 21 (потому что сервер ожидает 21 для уровня 20)
+                        if (level === 20) {
+                            level = 21;
+                        }
+                    }
+                    continue;
+                }
+
+                // Проверяем на количество: x1
+                if (token.startsWith('x')) {
+                    const num = token.replace('x', '');
+                    if (num && !isNaN(num)) {
+                        count = parseInt(num);
+                    }
+                    continue;
+                }
+
+                // Проверяем на основную стату (5 цифр, начинается с 150)
+                if (!mainProp && /^150\d{2}$/.test(parts[i])) {
+                    mainProp = parts[i];
+                    continue;
+                }
+
+                // Проверяем на второстепенные статы: 501034,2 или 501034:2 или 501034=2
+                if (/^\d{6}[,:=]\d+$/.test(parts[i]) || /^\d{6}[,:=]\d+$/.test(parts[i].replace(/^,/, ''))) {
+                    let statPart = parts[i];
+                    // Убираем запятую в начале если есть
+                    if (statPart.startsWith(',')) {
+                        statPart = statPart.substring(1);
+                    }
+                    
+                    // Разбиваем по разделителю
+                    const separator = statPart.includes(',') ? ',' : statPart.includes(':') ? ':' : '=';
+                    const [statId, statValue] = statPart.split(separator);
+                    
+                    if (statId && statId.length === 6 && /^\d+$/.test(statId)) {
+                        subStats.push(statId);
+                    }
+                }
+            }
+
+            // Если ID артефакта не нашли, пробуем найти любой 5-значный ID
+            if (!artifactId) {
+                for (const part of parts) {
+                    if (/^\d{5,6}$/.test(part) && parseInt(part) >= 70000 && parseInt(part) <= 79999) {
+                        artifactId = part;
+                        break;
+                    }
+                }
+            }
+
+            // Заполняем поля
+            if (artifactId) {
+                document.getElementById('artifact-id').value = artifactId;
+            } else {
+                alert('⚠️ Не удалось найти ID артефакта в команде.');
+                return;
+            }
+
+            document.getElementById('artifact-level').value = level;
+            document.getElementById('artifact-main-prop').value = mainProp || '';
+            document.getElementById('artifact-sub-stats').value = subStats.join(', ');
+            
+            // Также пытаемся извлечь UID если есть
+            const uidMatch = cmd.match(/uid\s*[=:]\s*(\d+)/i);
+            if (uidMatch) {
+                document.getElementById('artifact-uid').value = uidMatch[1];
+            }
+
+            logToTerminal(`✅ Распарсена команда: ID=${artifactId}, Уровень=${level}, Основная=${mainProp || 'не указана'}, Статы=${subStats.join(', ') || 'нет'}`, 'info');
+            
+            // Очищаем поле ввода
+            document.getElementById('artifact-parse-input').value = '';
+        }
+
+
+        function filterArtifactItems() {
+            const query = document.getElementById('artifact-search').value.toLowerCase().trim();
+            const container = document.getElementById('artifact-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>';
+                return;
+            }
+
+            // Ищем артефакты (ID от 70000 до 79999)
+            const results = fullHandbookList.filter(item => {
+                const id = item.id.toString();
+                const name = item.name.toLowerCase();
+                return (id >= '70000' && id <= '79999') && 
+                       (id.includes(query) || name.includes(query.toLowerCase()));
+            }).slice(0, 30);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Артефактов не найдено</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                     onclick="selectArtifactItem('${item.id}')"
+                     onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">📋</span>
+                </div>
+            `).join('');
+        }
+
+        function selectArtifactItem(itemId) {
+            document.getElementById('artifact-id').value = itemId;
+            document.getElementById('artifact-search').value = '';
+            document.getElementById('artifact-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Артефакт выбран, ID подставлен в поле выше</div>';
+        }
+
+        function sendArtifact() {
+            const uid = document.getElementById('artifact-uid').value.trim() || '1';
+            const itemId = document.getElementById('artifact-id').value.trim();
+            const level = parseInt(document.getElementById('artifact-level').value) || 21;
+            const mainPropId = parseInt(document.getElementById('artifact-main-prop').value.trim()) || 0;
+            const subStatsRaw = document.getElementById('artifact-sub-stats').value.trim();
+            
+            if (!itemId) {
+                alert('⚠️ Введите ID артефакта.');
+                return;
+            }
+
+            if (!mainPropId) {
+                alert('⚠️ Введите ID основной характеристики.');
+                return;
+            }
+
+            // Парсим второстепенные характеристики
+            let appendPropIdList = [];
+            if (subStatsRaw) {
+                appendPropIdList = subStatsRaw.split(',')
+                    .map(s => parseInt(s.trim()))
+                    .filter(id => !isNaN(id) && id > 0);
+                
+                if (appendPropIdList.length > 4) {
+                    alert('⚠️ Нельзя добавить больше 4 второстепенных характеристик.');
+                    return;
+                }
+            }
+
+            // Формируем extra_params
+            const extraParams = {
+                level: level,
+                main_prop_id: mainPropId,
+                append_prop_id_list: appendPropIdList
+            };
+
+            const params = {
+                uid: uid,
+                item_id: itemId,
+                item_count: '1',
+                extra_params: JSON.stringify(extraParams)
+            };
+
+            logToTerminal(`⚔️ Выдача артефакта: ${itemId} для UID ${uid}`, 'info');
+            logToTerminal(`📊 Уровень: ${level}, Основная стат: ${mainPropId}`, 'info');
+            logToTerminal(`📊 Второстепенные: ${appendPropIdList.join(', ') || 'нет'}`, 'info');
+            logToTerminal(`📋 Параметры: ${JSON.stringify(params, null, 2)}`, 'info');
+
+            sendMuipRequest('1127', params);
+        }
+
+
+        // ============================================
+        // ФУНКЦИИ ДЛЯ ОТПРАВКИ ПОЧТЫ (MAIL)
+        // ============================================
+        let mailItems = {}; // { "item_id": count }
+        let filteredMailHandbook = [];
+
+        function initMailTab() {
+            // Устанавливаем текущее время для expire
+            updateMailCurrentTime();
+            setInterval(updateMailCurrentTime, 10000);
+            
+            // Заполняем handbook для поиска предметов
+            filteredMailHandbook = fullHandbookList;
+        }
+
+        function updateMailCurrentTime() {
+            const now = Math.floor(Date.now() / 1000);
+            document.getElementById('mail-current-time').textContent = now;
+        }
+
+        function setExpireTime(days) {
+            const now = Math.floor(Date.now() / 1000);
+            document.getElementById('mail-expire').value = now + days;
+        }
+
+        function filterMailItems() {
+            const query = document.getElementById('mail-item-search').value.toLowerCase().trim();
+            const container = document.getElementById('mail-handbook-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>';
+                return;
+            }
+
+            const results = fullHandbookList.filter(item => 
+                item.id.toString().includes(query) || 
+                item.name.toLowerCase().includes(query)
+            ).slice(0, 30);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Ничего не найдено</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center; hover:background:#222;"
+                     onclick="selectMailItem('${item.id}', '${item.name.replace(/'/g, "\\'")}')"
+                     onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">+</span>
+                </div>
+            `).join('');
+        }
+
+        function selectMailItem(itemId, itemName) {
+            document.getElementById('selected-mail-item-id').textContent = itemId;
+            document.getElementById('selected-mail-item-name').textContent = itemName;
+            document.getElementById('mail-item-search').value = itemName;
+            document.getElementById('mail-handbook-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Предмет выбран, нажмите "+ Добавить вложение"</div>';
+        }
+
+        function addMailItem() {
+            const itemId = document.getElementById('selected-mail-item-id').textContent;
+            if (itemId === '--') {
+                alert('⚠️ Сначала выберите предмет из справочника.');
+                return;
+            }
+            const count = parseInt(document.getElementById('mail-item-count').value) || 1;
+            
+            if (mailItems[itemId]) {
+                mailItems[itemId] += count;
+            } else {
+                mailItems[itemId] = count;
+            }
+            renderMailItems();
+        }
+
+        function clearMailItems() {
+            mailItems = {};
+            renderMailItems();
+        }
+
+        function renderMailItems() {
+            const container = document.getElementById('mail-item-list');
+            const keys = Object.keys(mailItems);
+            
+            if (keys.length === 0) {
+                container.innerHTML = '<div style="color: #555; font-size: 13px;">Нет добавленных вложений</div>';
+                return;
+            }
+
+            container.innerHTML = keys.map(itemId => {
+                const name = fullHandbookList.find(i => i.id.toString() === itemId)?.name || itemId;
+                return `
+                    <div style="background: #252525; border-radius: 4px; padding: 6px 12px; display: flex; align-items: center; gap: 8px; border: 1px solid #3d3d3d;">
+                        <span style="font-weight: bold; color: #00bfff;">${itemId}</span>
+                        <span style="color: #aaa;">${name}</span>
+                        <span style="color: #888;">x${mailItems[itemId]}</span>
+                        <button onclick="removeMailItem('${itemId}')" style="background: none; border: none; color: #ff5555; cursor: pointer; font-size: 16px;">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeMailItem(itemId) {
+            delete mailItems[itemId];
+            renderMailItems();
+        }
+
+        function buildItemListString() {
+            const parts = [];
+            for (const [id, count] of Object.entries(mailItems)) {
+                parts.push(`${id}:${count}`);
+            }
+            return parts.join(',');
+        }
+
+        function sendMail() {
+            const uid = document.getElementById('mail-uid').value.trim() || '1';
+            const title = document.getElementById('mail-title').value.trim() || 'Без заголовка';
+            const content = document.getElementById('mail-content').value.trim() || 'Пустое письмо';
+            const sender = document.getElementById('mail-sender').value.trim() || 'Паймон';
+            const expire = document.getElementById('mail-expire').value.trim();
+            const importance = parseInt(document.getElementById('mail-importance').value) || 1;
+            const config_id = parseInt(document.getElementById('mail-config-id').value) || 0;
+            const item_limit_type = parseInt(document.getElementById('mail-item-limit-type').value) || 0;
+            const tag = parseInt(document.getElementById('mail-tag').value) || 0;
+            const source_type = parseInt(document.getElementById('mail-source-type').value) || 0;
+            const item_list = buildItemListString();
+
+            if (!expire) {
+                alert('⚠️ Введите время истечения письма (expire_time).');
+                return;
+            }
+
+            const params = {
+                uid: uid,
+                title: title,
+                content: content,
+                sender: sender,
+                expire_time: expire,
+                importance: importance,
+                config_id: config_id,
+                item_limit_type: item_limit_type,
+                tag: tag,
+                source_type: source_type,
+                item_list: item_list
+            };
+
+            logToTerminal(`📧 Отправка письма: "${title}" для UID ${uid}`, 'info');
+            logToTerminal(`📦 Вложения: ${item_list || 'нет'}`, 'info');
+
+            // Выполняем MUIP команду 1005 с параметрами
+            sendMuipRequest('1005', params);
+
+            // Сбрасываем выбор предмета
+            document.getElementById('selected-mail-item-id').textContent = '--';
+            document.getElementById('selected-mail-item-name').textContent = '--';
+        }
+
+        // Инициализация при загрузке
+        // Добавляем вызов initMailTab() в функцию loadSchema() после загрузки handbook
+        const originalInit = loadSchema;
+        loadSchema = async function() {
+            await originalInit();
+            initMailTab();
+        };
+
+        // ============================================
+        // ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ МОНСТРАМИ
+        // ============================================
+
+        function spawnMonster() {
+            const monsterId = document.getElementById('monster-id-input').value.trim();
+            const count = document.getElementById('monster-count-input').value || 1;
+            const level = document.getElementById('monster-level-input').value || 0;
+            
+            if (!monsterId) {
+                alert('⚠️ Введите ID монстра.');
+                return;
+            }
+            
+            // Формируем команду: monster <id> <count> <level>
+            const cmd = `monster ${monsterId} ${count} ${level}`;
+            logToTerminal(`🐉 Спавн монстра: ID=${monsterId}, Кол-во=${count}, Уровень=${level}`, 'info');
+            quickGm(cmd);
+        }
+
+        function killMonster() {
+            const monsterId = document.getElementById('monster-id-input').value.trim();
+            if (!monsterId) {
+                alert('⚠️ Введите ID монстра для убийства.');
+                return;
+            }
+            const cmd = `kill monster ${monsterId}`;
+            logToTerminal(`💀 Убить монстра: ID=${monsterId}`, 'info');
+            quickGm(cmd);
+        }
+
+        function killAllMonsters() {
+            const cmd = `kill monster all`;
+            logToTerminal(`☠️ Убить ВСЕХ монстров в сцене!`, 'err');
+            quickGm(cmd);
+        }
+
+        function filterMonsterHandbook() {
+            const query = document.getElementById('monster-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('monster-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска монстров...</div>';
+                return;
+            }
+
+            // Фильтруем только монстров (их ID обычно начинаются с 2 или 3, но ищем все по ключевым словам)
+            const results = fullHandbookList.filter(item => {
+                const id = item.id.toString();
+                const name = item.name.toLowerCase();
+                return (id.startsWith('2') || id.startsWith('3') || name.includes('монстр') || name.includes('slime') || name.includes('хиличурл') || name.includes('митачурл') || name.includes('ла') || name.includes('Фатуи')) &&
+                    (id.includes(query) || name.includes(query));
+            }).slice(0, 40);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Монстров не найдено</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                    onclick="selectMonster('${item.id}')"
+                    onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">🐉</span>
+                </div>
+            `).join('');
+        }
+
+        function selectMonster(id) {
+            document.getElementById('monster-id-input').value = id;
+            document.getElementById('monster-search-input').value = '';
+            document.getElementById('monster-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Монстр выбран, ID подставлен в поле выше</div>';
+        }
+
+
+    </script>
+</body>
+</html>
