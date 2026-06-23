@@ -1,0 +1,89 @@
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; margin: 0; height: 100vh; background-color: #121212; color: #e0e0e0; overflow: hidden; }
+        .sidebar { width: 280px; background-color: #1a1a1a; padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 10; }
+        .sidebar h3 { color: #ffffff; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 15px; margin-top: 0; }
+        .sidebar button { background: transparent; color: #a0a0a0; display: flex; align-items: center; gap: 10px; border: 1px solid transparent; padding: 12px 15px; text-align: left; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .sidebar button:hover { background: #252525; color: #ffffff; }
+        .sidebar button.active { background: #00439c; color: #ffffff; border: 1px solid #0056c6; }
+        
+        .main-container { flex: 1; display: flex; flex-direction: column; height: 100%; background-color: #141414; }
+        .header { background-color: #1a1a1a; padding: 15px 25px; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { margin: 0; font-size: 20px; font-weight: 500; color: #fff; }
+        .global-uid-box { display: flex; align-items: center; gap: 10px; background: #222; padding: 6px 12px; border-radius: 6px; border: 1px solid #333; }
+        .global-uid-box label { font-size: 13px; color: #aaa; }
+        .global-uid-box input { background: #141414; border: 1px solid #444; color: #fff; padding: 4px 8px; width: 90px; border-radius: 4px; font-family: monospace; font-size: 14px; text-align: center; }
+        
+        .content-area { flex: 1; padding: 25px; overflow-y: auto; display: none; }
+        .content-area.active { display: block; }
+        
+        .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #1c1c1c; border: 1px solid #2d2d2d; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .card h4 { margin-top: 0; margin-bottom: 15px; color: #fff; font-size: 16px; font-weight: 500; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; color: #aaa; }
+        .form-group input, .form-group select, .form-group textarea { background: #252525; border: 1px solid #3d3d3d; color: #fff; padding: 10px; border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: #00439c; }
+        
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .action-btn { background: #00439c; color: #fff; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; font-weight: 500; }
+        .action-btn:hover { background: #0056c6; }
+        .action-btn.secondary { background: #2a2a2a; border: 1px solid #444; color: #ccc; }
+        .action-btn.secondary:hover { background: #333; color: #fff; }
+        .action-btn.danger { background: #802020; }
+        .action-btn.danger:hover { background: #a03030; }
+        
+        .terminal-box { height: 220px; background: #0b0b0b; border-top: 1px solid #252525; display: flex; flex-direction: column; font-family: 'Courier New', Courier, monospace; }
+        .terminal-header { background: #161616; padding: 8px 20px; font-size: 12px; color: #888; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .terminal-output { flex: 1; padding: 15px; overflow-y: auto; font-size: 13px; line-height: 1.5; color: #39ff14; }
+        .log-entry { margin-bottom: 8px; border-left: 3px solid #39ff14; padding-left: 8px; white-space: pre-wrap; }
+        .log-entry.err { color: #ff3333; border-color: #ff3333; }
+        .log-entry.info { color: #00bfff; border-color: #00bfff; }
+        
+        .search-table-wrapper { max-height: 400px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #161616; }
+        .search-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        .search-table th, .search-table td { padding: 10px 15px; border-bottom: 1px solid #2d2d2d; }
+        .search-table th { background: #1f1f1f; color: #aaa; font-weight: 500; position: sticky; top: 0; }
+        .search-table tr:hover { background: #222; }
+        
+        .quick-badge { background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background 0.2s; }
+        .quick-badge:hover { background: #00439c; border-color: #0056c6; }
+
+        /* Стили для блока квестов */
+        .quest-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .quest-btn { padding: 12px; border-radius: 6px; border: 1px solid #444; background: #252525; color: #e0e0e0; cursor: pointer; transition: all 0.2s; font-weight: 500; text-align: center; }
+        .quest-btn:hover { background: #333; border-color: #666; }
+        .quest-btn.accept { border-color: #1d7a3a; color: #7ddf9a; }
+        .quest-btn.accept:hover { background: #1d7a3a; color: #fff; }
+        .quest-btn.finish { border-color: #c97d0e; color: #f5b342; }
+        .quest-btn.finish:hover { background: #c97d0e; color: #fff; }
+        .quest-btn.add { border-color: #2a6a8a; color: #6ac0ff; }
+        .quest-btn.add:hover { background: #2a6a8a; color: #fff; }
+        /* Ищем все элементы, у которых класс начинается с "icon-" */
+        /* --- Исправленный блок в самом конце файла --- */
+
+        /* Универсальный контейнер для всего внутри кнопок */
+        button {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+
+        /* 1. Если это иконка Lucide (класс icon-) */
+        button [class*="icon-"] {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 18px !important; /* Уменьшите, если иконка слишком большая */
+        }
+
+        /* 2. Если это эмодзи (простой текст внутри кнопки) */
+        /* Мы используем относительное позиционирование, чтобы «приподнять» или «опустить» эмодзи */
+        button::first-letter {
+            /* Если эмодзи стоит в самом начале, это поможет */
+            vertical-align: middle;
+        }
+
+        /* Трюк для выравнивания эмодзи, если они все еще криво */
+        button {
+            line-height: 1 !important; /* Важно: отключает лишние отступы строк */
+        }
