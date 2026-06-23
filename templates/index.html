@@ -72,9 +72,13 @@
     <div class="sidebar">
         <h3>Панель Управления</h3>
         <button onclick="switchTab('tab-gm')" id="btn-tab-gm" class="active">⚡ Быстрые GM команды</button>
-	    <button onclick="switchTab('tab-mail')" id="btn-tab-mail">📧 Отправить почту</button>
-        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact">⚔️ Выдать артефакт</button>
+        <button onclick="switchTab('tab-player')" id="btn-tab-player">👤 Игрок</button>
+        <button onclick="switchTab('tab-teleport')" id="btn-tab-teleport">🎯 Телепорт</button>
+        <button onclick="switchTab('tab-weapons')" id="btn-tab-weapons">⚔️ Оружие</button>
+        <button onclick="switchTab('tab-characters')" id="btn-tab-characters">👥 Персонажи</button>
         <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn">🐉 Спавн</button>
+        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact">⚔️ Выдать артефакт</button>
+	    <button onclick="switchTab('tab-mail')" id="btn-tab-mail">📧 Отправить почту</button>
         <button onclick="switchTab('tab-muip')" id="btn-tab-muip">⚙️ Все MUIP функции</button>
         <button onclick="switchTab('tab-handbook')" id="btn-tab-handbook">📖 Книга ID (Handbook)</button>
         <button onclick="switchTab('tab-settings')" id="btn-tab-settings">🔧 Настройки конфига</button>
@@ -85,7 +89,7 @@
             <h2 id="current-title">Быстрые GM Команды</h2>
             <div class="global-uid-box">
                 <label for="global-uid">Глобальный UID игрока:</label>
-                <input type="text" id="global-uid" value="1337" onchange="syncUidChange()">
+                <input type="text" id="global-uid" value="1" onchange="syncUidChange()">
             </div>
         </div>
 
@@ -163,7 +167,207 @@
             </div>
         </div>
 
+        <div id="tab-player" class="content-area">
+            <div class="grid-two">
+                <!-- Левая колонка: Уровни и опыт -->
+                <div>
+                    <div class="card">
+                        <h4>📊 Уровень и опыт</h4>
+                        <div class="form-group">
+                            <label>Уровень приключений (1-60):</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="player-level-input" value="1" min="1" max="60" style="flex:1;">
+                                <button class="action-btn" onclick="setPlayerLevel()">Установить</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Добавить опыт:</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="player-exp-input" value="1000" min="1" style="flex:1;">
+                                <button class="action-btn" onclick="addPlayerExp()">➕ Добавить</button>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="card">
+                        <h4>🛡️ Режимы</h4>
+                        <div class="btn-row">
+                            <button class="quick-badge" onclick="quickGm('wudi global avatar on')">🛡️ Режим бога ВКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('wudi global avatar off')">❌ Режим бога ВЫКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('energy infinite on')">🌀 Энергия без КД ВКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('energy infinite off')">🌀 Энергия без КД ВЫКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('stamina infinite on')">🏃 Беск. стамина ВКЛ</button>
+                            <button class="quick-badge" onclick="quickGm('stamina infinite off')">🏃 Беск. стамина ВЫКЛ</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка: Валюта -->
+                <div>
+                    <div class="card">
+                        <h4>💰 Валюта</h4>
+                        <div class="form-group">
+                            <label>Камень Истока (Primogems):</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="player-primogems-input" value="10000" min="1" style="flex:1;">
+                                <button class="action-btn" onclick="addPrimogems()">Выдать</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Мора (Mora):</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="player-mora-input" value="1000000" min="1" style="flex:1;">
+                                <button class="action-btn" onclick="addMora()">Выдать</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Переплетающиеся судьбы:</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="player-fate-input" value="100" min="1" style="flex:1;">
+                                <button class="action-btn" onclick="addFate()">Выдать</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Судьбоносные встречи:</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="number" id="player-acquaint-input" value="100" min="1" style="flex:1;">
+                                <button class="action-btn" onclick="addAcquaint()">Выдать</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                <div id="tab-teleport" class="content-area">
+            <div class="grid-two">
+                <div>
+
+                    <div class="card">
+                        <h4>📦 Подземелья</h4>
+                        <div class="form-group">
+                            <label>ID подземелья:</label>
+                            <input type="text" id="teleport-dungeon-input" placeholder="Например: 1001">
+                        </div>
+                        <button class="action-btn" onclick="teleportToDungeon()" style="width:100%;">🚪 Войти в подземелье</button>
+                    </div>
+
+                    <div class="card">
+                        <h4>📦 Сцены</h4>
+                        <div class="form-group">
+                            <label>ID сцены:</label>
+                            <input type="text" id="teleport-scene-input" placeholder="Например: 3">
+                        </div>
+                        <button class="action-btn" onclick="teleportToScene()" style="width:100%;">🚪 Войти в подземелье</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <h4>📌 Координаты (XYZ)</h4>
+                        <div class="form-group">
+                            <label>X:</label>
+                            <input type="text" id="teleport-x" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Y:</label>
+                            <input type="text" id="teleport-y" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Z:</label>
+                            <input type="text" id="teleport-z" value="0">
+                        </div>
+                        <button class="action-btn" onclick="teleportToCoords()" style="width:100%;">📍 Телепорт по координатам</button>
+                        <div style="font-size:12px; color:#888; margin-top:8px;">
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div id="tab-weapons" class="content-area">
+            <div class="card">
+                <h4>⚔️ Выдача оружия</h4>
+                <div class="form-group">
+                    <label>UID получателя:</label>
+                    <input type="text" id="weapon-uid" value="1">
+                </div>
+                <div class="form-group">
+                    <label>ID оружия (из справочника):</label>
+                    <input type="text" id="weapon-id" placeholder="13501">
+                </div>
+                <div class="form-group">
+                    <label>Уровень оружия (1-90):</label>
+                    <input type="number" id="weapon-level" value="90" min="1" max="90">
+                </div>
+                <div class="form-group">
+                    <label>Пробуждение:</label>
+                    <input type="number" id="weapon-promote" value="1">
+                </div>
+                <button class="action-btn" onclick="sendWeapon()" style="width:100%; padding:15px;">⚔️ Выдать оружие</button>
+            </div>
+
+            <div class="card" style="background: #161616;">
+                <h4>🔍 Поиск оружия</h4>
+                <div class="form-group">
+                    <label>Поиск по ID или названию:</label>
+                    <input type="text" id="weapon-search" placeholder="Введите ID или название..." oninput="filterWeaponItems()">
+                </div>
+                <div id="weapon-search-results" style="max-height: 250px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                    <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>
+                </div>
+                <div style="font-size:12px; color:#888; margin-top:5px;">
+                    💡 ID оружия: 11101-15509. Нажмите на найденное оружие, чтобы подставить его ID.
+                </div>
+            </div>
+        </div>
+
+
+                <div id="tab-characters" class="content-area">
+            <div class="card">
+                <h4>👥 Управление персонажами</h4>
+                <div class="form-group">
+                    <label>UID получателя:</label>
+                    <input type="text" id="char-uid" value="1">
+                </div>
+                <div class="form-group">
+                    <label>ID персонажа:</label>
+                    <input type="text" id="char-id" placeholder="10000002">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                    <button class="action-btn" onclick="addCharacter()" style="flex:1;">➕ Добавить персонажа</button>
+                    <button class="action-btn secondary" onclick="changeCharacter()" style="flex:1;">🔄 Сделать активным</button>
+                </div>
+            </div>
+
+            <div class="card" style="background: #161616;">
+                <h4>🔍 Поиск персонажей</h4>
+                <div class="form-group">
+                    <label>Поиск по ID или названию:</label>
+                    <input type="text" id="char-search" placeholder="Введите ID или имя..." oninput="filterCharacterItems()">
+                </div>
+                <div id="char-search-results" style="max-height: 300px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                    <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>
+                </div>
+                <div style="font-size:12px; color:#888; margin-top:5px;">
+                    💡 ID персонажа начинаются с 10000001+. Нажмите на персонажа, чтобы подставить его ID.
+                </div>
+            </div>
+
+            <div class="card" style="background: #161616; margin-top:10px;">
+                <h4>⚡ Быстрые действия</h4>
+                <div class="btn-row">
+                    <button class="quick-badge" onclick="quickGm('break 6')">✨ Макс. фаза возвышения</button>
+                    <button class="quick-badge" onclick="quickGm('level 90')">❄️ Максимальный левел персонажа</button>
+                    <button class="quick-badge" onclick="quickGm('skill all 10')">🎉 Максимальный талант (способ1)</button>
+                    <button class="quick-badge" onclick="quickGm('skill skill4 10')">🎉 Максимальный талант (способ 2)</button>
+                    <button class="quick-badge" onclick="quickGm('skill skill3 10')">🎉 Максимальный талант (способ 3)</button>
+                    <button class="quick-badge" onclick="quickGm('talent unlock all')">🎁 Разблокировать все созвездия</button>
+                </div>
+            </div>
+        </div>
 
         <div id="tab-mail" class="content-area">
             <div class="card">
@@ -506,7 +710,11 @@
                 'tab-settings': 'Настройки Конфигурации',
                 'tab-mail': '📧 Отправить почту (MUIP 1005)',
                 'tab-artifact': '⚔️ Выдать артефакт (MUIP 1127)',
-                'tab-spawn': '🐉 Спавн монстров (MUIP 1116)'
+                'tab-teleport': '🎯 Телепорт (MUIP 1116)',
+                'tab-player': '👤 Игрок (MUIP 1116)',
+                'tab-weapons': '⚔️ Оружие (MUIP 1116)',
+                'tab-characters': '👥 Персонажи (MUIP 1116)',
+                
             };
             document.getElementById('current-title').textContent = titleMap[tabId] || tabId;
         }
@@ -1179,8 +1387,209 @@ function questAction(action) {
             document.getElementById('monster-search-input').value = '';
             document.getElementById('monster-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Монстр выбран, ID подставлен в поле выше</div>';
         }
+        // Player Level
+        function setPlayerLevel() {
+            const level = document.getElementById('player-level-input').value;
+            quickGm(`player level ${level}`);
+        }
 
+        // Add Experience
+        function addPlayerExp() {
+            const exp = document.getElementById('player-exp-input').value;
+            quickGm(`item add 102 ${exp}`);
+        }
 
+        // Currency functions
+        function addPrimogems() {
+            const amount = document.getElementById('player-primogems-input').value;
+            quickGm(`item add 201 ${amount}`);
+        }
+
+        function addMora() {
+            const amount = document.getElementById('player-mora-input').value;
+            quickGm(`item add 202 ${amount}`);
+        }
+
+        function addGenesis() {
+            const amount = document.getElementById('player-genesis-input').value;
+            quickGm(`item add 203 ${amount}`);
+        }
+
+        function addFate() {
+            const amount = document.getElementById('player-fate-input').value;
+            quickGm(`item add 223 ${amount}`);
+        }
+
+        function addAcquaint() {
+            const amount = document.getElementById('player-acquaint-input').value;
+            quickGm(`item add 224 ${amount}`);
+        }
+
+        // Teleport to dungeon
+        function teleportToDungeon() {
+            const dungeonId = document.getElementById('teleport-dungeon-input').value.trim();
+            if (!dungeonId) {
+                alert('⚠️ Введите ID подземелья.');
+                return;
+            }
+            quickGm(`dungeon ${dungeonId}`);
+        }
+
+         // Teleport to scene
+        function teleportToScene() {
+            const sceneId = document.getElementById('teleport-scene-input').value.trim();
+            if (!sceneId) {
+                alert('⚠️ Введите ID сцены.');
+                return;
+            }
+            quickGm(`jump ${sceneId}`);
+        }
+
+        // Teleport to coordinates
+        function teleportToCoords() {
+            const x = document.getElementById('teleport-x').value.trim() || '0';
+            const y = document.getElementById('teleport-y').value.trim() || '0';
+            const z = document.getElementById('teleport-z').value.trim() || '0';
+            
+            let cmd = `goto ${x} ${y} ${z}`;
+        }
+
+        let weaponCache = [];
+
+        // Filter weapons from handbook (IDs 11101-15509)
+        function filterWeaponItems() {
+            const query = document.getElementById('weapon-search').value.toLowerCase().trim();
+            const container = document.getElementById('weapon-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>';
+                return;
+            }
+
+            // Cache weapons on first search
+            if (weaponCache.length === 0) {
+                weaponCache = fullHandbookList.filter(item => {
+                    const id = parseInt(item.id);
+                    return id >= 11101 && id <= 15509;
+                });
+            }
+
+            const results = weaponCache.filter(item => 
+                item.id.toString().includes(query) || 
+                item.name.toLowerCase().includes(query)
+            ).slice(0, 50);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Оружие не найдено</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                    onclick="selectWeapon('${item.id}')"
+                    onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">⚔️</span>
+                </div>
+            `).join('');
+        }
+
+        function selectWeapon(weaponId) {
+            document.getElementById('weapon-id').value = weaponId;
+            document.getElementById('weapon-search').value = '';
+            document.getElementById('weapon-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Оружие выбрано, ID подставлен в поле выше</div>';
+        }
+
+        function sendWeapon() {
+            const uid = document.getElementById('weapon-uid').value.trim() || '1';
+            const itemId = document.getElementById('weapon-id').value.trim();
+            const level = parseInt(document.getElementById('weapon-level').value) || 90;
+            const promote = parseInt(document.getElementById('weapon-promote').value) || 5;
+
+            if (!itemId) {
+                alert('⚠️ Введите ID оружия.');
+                return;
+            }
+
+            logToTerminal(`⚔️ Выдача оружия: ${itemId} для UID ${uid}`, 'info');
+            logToTerminal(`📊 Уровень: ${level}, Пробуждение: ${promote}`, 'info');
+
+            // Using equip add command format: equip add <item_id> <level> <promote>
+            const cmd = `equip add ${itemId} ${level} ${promote}`;
+            quickGm(cmd);
+        }
+
+        let characterCache = [];
+
+        // Filter characters from handbook (IDs 10000002+)
+        function filterCharacterItems() {
+            const query = document.getElementById('char-search').value.toLowerCase().trim();
+            const container = document.getElementById('char-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>';
+                return;
+            }
+
+            // Cache characters on first search
+            if (characterCache.length === 0) {
+                characterCache = fullHandbookList.filter(item => {
+                    const id = parseInt(item.id);
+                    return id >= 10000001 && id <= 11000042;
+                });
+            }
+
+            const results = characterCache.filter(item => 
+                item.id.toString().includes(query) || 
+                item.name.toLowerCase().includes(query)
+            ).slice(0, 50);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Персонажи не найдены</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                    onclick="selectCharacter('${item.id}')"
+                    onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">👤</span>
+                </div>
+            `).join('');
+        }
+
+        function selectCharacter(charId) {
+            document.getElementById('char-id').value = charId;
+            document.getElementById('char-search').value = '';
+            document.getElementById('char-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Персонаж выбран, ID подставлен в поле выше</div>';
+        }
+
+        function addCharacter() {
+            const uid = document.getElementById('char-uid').value.trim() || '1';
+            const charId = document.getElementById('char-id').value.trim();
+            
+            if (!charId) {
+                alert('⚠️ Введите ID персонажа.');
+                return;
+            }
+
+            logToTerminal(`👤 Добавление персонажа: ${charId} для UID ${uid}`, 'info');
+            quickGm(`avatar add ${charId}`);
+        }
+
+        function changeCharacter() {
+            const uid = document.getElementById('char-uid').value.trim() || '1';
+            const charId = document.getElementById('char-id').value.trim();
+            
+            if (!charId) {
+                alert('⚠️ Введите ID персонажа.');
+                return;
+            }
+
+            logToTerminal(`🔄 Смена персонажа на: ${charId} для UID ${uid}`, 'info');
+            quickGm(`avatar change ${charId}`);
+        }
     </script>
 </body>
 </html>
