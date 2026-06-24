@@ -10,19 +10,26 @@
 <body>
 
     <div class="sidebar">
-        <h3>Панель Управления</h3>
-        <button onclick="switchTab('tab-gm')" id="btn-tab-gm" class="active"> <i class="icon-gauge"></i> Быстрые GM команды
-        </button>
-        <button onclick="switchTab('tab-player')" id="btn-tab-player"> <i class="icon-person-standing"></i> Игрок</button>
-        <button onclick="switchTab('tab-teleport')" id="btn-tab-teleport"> <i class="icon-compass"></i> Телепорт</button>
-        <button onclick="switchTab('tab-weapons')" id="btn-tab-weapons"> <i class="icon-swords"></i> Оружие</button>
-        <button onclick="switchTab('tab-characters')" id="btn-tab-characters"> <i class="icon-users-round"></i> Персонажи</button>
-        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn"> <i class="icon-egg"></i> Спавн</button>
-        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact"> <i class="icon-amphora"></i> Выдать артефакт</button>
-	    <button onclick="switchTab('tab-mail')" id="btn-tab-mail"> <i class="icon-mail"></i> Отправить почту</button>
-        <button onclick="switchTab('tab-muip')" id="btn-tab-muip"> <i class="icon-cog"></i> Все MUIP функции</button>
-        <button onclick="switchTab('tab-handbook')" id="btn-tab-handbook"> <i class="icon-book"></i> Книга ID (Handbook)</button>
-        <button onclick="switchTab('tab-settings')" id="btn-tab-settings"> <i class="icon-key"></i> Настройки конфига</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0;" id="sidebar-title">Панель Управления</h3>
+            <button onclick="toggleSidebar()" style="background:transparent; border:1px solid #444; color:#aaa; border-radius:4px; padding:4px 8px; cursor:pointer; font-size:16px; transition:all 0.2s;" 
+                    id="sidebar-toggle-btn" title="Свернуть/Развернуть меню">
+                <i class="icon-chevron-left"></i>
+            </button>
+        </div>
+        <button onclick="switchTab('tab-gm')" id="btn-tab-gm" class="active"> <i class="icon-gauge"></i> <span>Быстрые GM команды</span></button>
+        <button onclick="switchTab('tab-player')" id="btn-tab-player"> <i class="icon-person-standing"></i> <span>Игрок</span></button>
+        <button onclick="switchTab('tab-quests')" id="btn-tab-quests"> <i class="icon-notebook-tabs"></i> <span>Квесты</span></button>
+        <button onclick="switchTab('tab-teleport')" id="btn-tab-teleport"> <i class="icon-compass"></i> <span>Телепорт</span></button>
+        <button onclick="switchTab('tab-weapons')" id="btn-tab-weapons"> <i class="icon-swords"></i> <span>Оружие</span></button>
+        <button onclick="switchTab('tab-characters')" id="btn-tab-characters"> <i class="icon-users-round"></i> <span>Персонажи</span></button>
+        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn"> <i class="icon-egg"></i> <span>Спавн</span></button>
+        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact"> <i class="icon-amphora"></i> <span>Выдать артефакт</span></button>
+        <button onclick="switchTab('tab-items')" id="btn-tab-items"> <i class="icon-package"></i> <span>Предметы</span></button>
+        <button onclick="switchTab('tab-mail')" id="btn-tab-mail"> <i class="icon-mail"></i> <span>Отправить почту</span></button>
+        <button onclick="switchTab('tab-muip')" id="btn-tab-muip"> <i class="icon-cog"></i> <span>Все MUIP функции</span></button>
+        <button onclick="switchTab('tab-handbook')" id="btn-tab-handbook"> <i class="icon-book"></i> <span>Книга ID (Handbook)</span></button>
+        <button onclick="switchTab('tab-settings')" id="btn-tab-settings"> <i class="icon-key"></i> <span>Настройки конфига</span></button>
     </div>
 
     <div class="main-container">
@@ -180,7 +187,118 @@
             </div>
         </div>
 
-                <div id="tab-teleport" class="content-area">
+        <div id="tab-items" class="content-area">
+            <div class="grid-two">
+                <!-- Левая колонка: Выдача предметов -->
+                <div>
+                    <div class="card">
+                        <h4><i class="icon-package"></i> Выдача предметов</h4>
+                        <div class="form-group">
+                            <label>UID получателя:</label>
+                            <input type="text" id="items-uid" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>ID предмета (из справочника):</label>
+                            <input type="text" id="items-id" placeholder="201">
+                        </div>
+                        <div class="form-group">
+                            <label>Количество:</label>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                <input type="number" id="items-count" value="1" min="1" style="flex:1; min-width:120px;">
+                                <button class="action-btn secondary" onclick="setItemCount(1)" style="padding:6px 12px;">1</button>
+                                <button class="action-btn secondary" onclick="setItemCount(10)" style="padding:6px 12px;">10</button>
+                                <button class="action-btn secondary" onclick="setItemCount(50)" style="padding:6px 12px;">50</button>
+                                <button class="action-btn secondary" onclick="setItemCount(100)" style="padding:6px 12px;">100</button>
+                                <button class="action-btn secondary" onclick="setItemCount(999)" style="padding:6px 12px;">999</button>
+                                <button class="action-btn secondary" onclick="setItemCount(99999)" style="padding:6px 12px;">99999</button>
+                            </div>
+                        </div>
+                        <button class="action-btn" onclick="sendItems()" style="width:100%; padding:15px; margin-top:10px;">
+                            <i class="icon-package"></i> Выдать предметы
+                        </button>
+                        <div style="font-size:12px; color:#888; margin-top:8px;">
+                            <i class="icon-lightbulb"></i> Для оружия используйте команду <code>equip add</code>, для персонажей — <code>avatar add</code>. Система определит автоматически.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка: Поиск предметов -->
+                <div>
+                    <div class="card" style="background: #161616;">
+                        <h4><i class="icon-search"></i> Поиск предметов</h4>
+                        <div class="form-group">
+                            <label>Поиск по ID или названию:</label>
+                            <input type="text" id="items-search" placeholder="Введите ID или название..." oninput="filterItemsList()">
+                        </div>
+                        <div id="items-search-results" style="max-height: 350px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                            <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>
+                        </div>
+                        <div style="font-size:12px; color:#888; margin-top:5px;">
+                            <i class="icon-lightbulb"></i> Нажмите на предмет, чтобы подставить его ID. 
+                            Оружие: 11101-15509 | Артефакты: 70000-79999 | Персонажи: 10000001+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="tab-quests" class="content-area">
+            <div class="grid-two">
+                <!-- Левая колонка: Управление квестами -->
+                <div>
+                    <div class="card">
+                        <h4><i class="icon-notebook-tabs"></i> Управление квестами</h4>
+                        <div class="form-group">
+                            <label>UID игрока:</label>
+                            <input type="text" id="quest-uid" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>ID квеста:</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <input type="text" id="quest-id-input" placeholder="30904" style="flex:1;">
+                                <button class="action-btn secondary" style="padding:4px 10px; font-size:12px;" onclick="document.getElementById('quest-id-input').value=''">✖</button>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                            <button class="action-btn" onclick="questAction('add')" style="flex:1;"><i class="icon-plus"></i> Добавить</button>
+                            <button class="action-btn" onclick="questAction('accept')" style="flex:1;"><i class="icon-mail-open"></i> Принять</button>
+                            <button class="action-btn" onclick="questAction('finish')" style="flex:1;"><i class="icon-check"></i> Завершить</button>
+                        </div>
+                        <div id="quest-status" style="font-size:12px; color:#aaa; margin-top:10px;">
+                            <i class="icon-lightbulb"></i> Текущий ID: <span id="current-quest-id-display" style="color:#fff; font-weight:bold;">—</span>
+                        </div>
+                        <div style="font-size:12px; color:#888; margin-top:6px;">
+                            <i class="icon-lightbulb"></i> <strong>Примеры:</strong> add 30904, accept 30904, finish 30904.<br>
+                            Для сложных команд вводите напрямую: <code>finishv2 123</code>, <code>clear pquest</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Правая колонка: Поиск квестов -->
+                <div>
+                    <div class="card" style="background: #161616;">
+                        <h4><i class="icon-search"></i> Поиск Квестов</h4>
+                        <div class="form-group">
+                            <label>Поиск по ID или названию:</label>
+                            <input type="text" id="quests-search" placeholder="Введите ID или название..." oninput="filterQuestsItems()">
+                        </div>
+                        <div id="quests-search-results" style="max-height: 250px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                            <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>
+                        </div>
+                        <div style="font-size:12px; color:#888; margin-top:5px;">
+                            <i class="icon-lightbulb"></i> Нажмите на квест, чтобы подставить его ID в поле слева.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+        <div id="tab-teleport" class="content-area">
             <div class="grid-two">
                 <div>
 
@@ -223,8 +341,6 @@
                         </div>
                     </div>
                 </div>
-
-
             </div>
         </div>
 
@@ -376,7 +492,7 @@
                         <label style="white-space: nowrap;">Количество:</label>
                         <input type="number" id="mail-item-count" value="1" min="1" style="width: 80px;">
                         <button class="action-btn" onclick="addMailItem()"><i class="icon-plus"></i> Добавить вложение</button>
-                        <button class="action-btn danger" onclick="clearMailItems()">🗑️ Очистить всё</button>
+                        <button class="action-btn danger" onclick="clearMailItems()"><i class="icon-trash"></i> Очистить всё</button>
                     </div>
                     <div id="mail-item-list" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
                         <!-- Сюда будут добавляться предметы -->
@@ -387,7 +503,7 @@
                     </div>
                 </div>
 
-                <button class="action-btn" onclick="sendMail()" style="margin-top: 20px; width: 100%; padding: 15px;">✉️ Отправить письмо</button>
+                <button class="action-btn" onclick="sendMail()" style="margin-top: 20px; width: 100%; padding: 15px;"><i class="icon-mail"></i> Отправить письмо</button>
             </div>
         </div>
 
@@ -474,28 +590,7 @@
         </div>
 
 
-        <!-- НОВЫЙ БЛОК: Управление квестами -->
-        <div class="card" style="margin-top: 10px;">
-            <h4><i class="icon-notebook-tabs"></i> Управление квестами</h4>
-            <div class="form-group" style="flex-direction:row; gap:10px; align-items:center; flex-wrap:wrap;">
-                <label style="white-space:nowrap; font-weight:500;">ID квеста:</label>
-                <div style="display:flex; align-items:center; gap:5px; flex:1; min-width:180px; max-width:280px;">
-                       <input type="text" id="quest-id-input" placeholder="30904" style="flex:1; min-width:100px;">
-                       <button class="action-btn secondary" style="padding:4px 10px; font-size:12px; flex-shrink:0;" onclick="document.getElementById('quest-id-input').value=''">✖</button>
-                   </div>
-                   <div class="quest-grid" style="flex:2; min-width:300px;">
-                       <button class="quest-btn add" onclick="questAction('add')"><i class="icon-plus"></i> Добавить</button>
-                       <button class="quest-btn accept" onclick="questAction('accept')"><i class="icon-mail-open"></i> Принять</button>
-                       <button class="quest-btn finish" onclick="questAction('finish')"><i class="icon-check"></i> Завершить</button>
-                   </div>
-               </div>
-               <div id="quest-status" style="font-size:12px; color:#aaa; margin-top:6px;"><i class="icon-lightbulb"></i> Текущий ID: <span id="current-quest-id-display" style="color:#fff; font-weight:bold;">—</span></div>
-               <div style="font-size:12px; color:#888; margin-top:4px;">
-                   <i class="icon-lightbulb"></i> <strong>Примеры:</strong> add 30904 (добавить квест) |Обычно, команда add не работает, пользуйтесь accept|, accept 30904 (принять), finish 30904 (завершить).
-                   Для сложных команд вводите напрямую: <code>finishv2 123</code>, <code>clear pquest</code> и т.д. (Как написано в хэндбуке)
-                   </div>
-                </div>
-        <!-- КОНЕЦ БЛОКА КВЕСТОВ -->
+
             </div>
 
         <div id="tab-muip" class="content-area">
@@ -553,14 +648,27 @@
             </div>
         </div>
 
-        <div class="terminal-box">
-            <div class="terminal-header">
-                <span>ЖУРНАЛ ОТВЕТОВ MUIP СЕРВЕРА</span>
-                <button class="action-btn secondary" style="padding: 2px 8px; font-size: 11px;" onclick="clearTerminal()">Очистить</button>
+        <!-- Контейнер для уведомлений -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <!-- Кнопка переключения консоли -->
+    <button class="console-toggle-btn" id="consoleToggleBtn" onclick="toggleConsole()" title="Показать/скрыть консоль">
+        <i class="icon-terminal"></i>
+        <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+    </button>
+
+    <!-- Консоль -->
+    <div class="console-container" id="consoleContainer">
+        <div class="console-header">
+            <span>ЖУРНАЛ ОТВЕТОВ MUIP СЕРВЕРА</span>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span id="console-entry-count" style="color:#555; font-size:11px;">0 записей</span>
+                <button class="console-clear-btn" onclick="clearConsole()">Очистить</button>
+                <button class="console-close-btn" onclick="toggleConsole()">✕</button>
             </div>
-            <div id="terminal-output" class="terminal-output">
-                <div class="log-entry info">[Система] Панель контроля запущена и ожидает команд.</div>
-            </div>
+        </div>
+        <div class="console-output" id="consoleOutput">
+            <div class="log-entry info">[Система] Панель контроля запущена и ожидает команд.</div>
         </div>
     </div>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

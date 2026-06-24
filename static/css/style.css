@@ -87,3 +87,346 @@
         button {
             line-height: 1 !important; /* Важно: отключает лишние отступы строк */
         }
+
+                /* Компактный режим сайдбара */
+        .sidebar.compact {
+            width: 70px;
+            padding: 15px 10px;
+            overflow: hidden;
+        }
+
+        .sidebar.compact h3 {
+            font-size: 0;
+            opacity: 0;
+            margin: 0;
+        }
+
+        .sidebar.compact .sidebar-title-text {
+            display: none;
+        }
+
+        .sidebar.compact .sidebar-toggle-btn {
+            transform: rotate(180deg);
+        }
+
+        .sidebar.compact button {
+            padding: 12px 8px;
+            justify-content: center !important;
+            font-size: 0 !important;
+            width: 100%;
+        }
+
+        .sidebar.compact button i {
+            font-size: 22px !important;
+            margin: 0 !important;
+        }
+
+        .sidebar.compact button span {
+            display: none;
+        }
+
+        .sidebar.compact button .tooltip-text {
+            display: none;
+        }
+
+        /* Анимация перехода */
+        .sidebar, .sidebar.compact {
+            transition: width 0.25s ease, padding 0.25s ease;
+        }
+
+        .sidebar button {
+            transition: all 0.2s ease;
+        }
+
+        /* Подсказка при наведении в компактном режиме */
+        .sidebar.compact button {
+            position: relative;
+        }
+
+        .sidebar.compact button:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 75px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1a1a1a;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            white-space: nowrap;
+            border: 1px solid #333;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+                /* ============================================
+        СИСТЕМА УВЕДОМЛЕНИЙ
+        ============================================ */
+
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .notification {
+            background: #1a1a1a;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e0e0e0;
+            font-size: 13px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            pointer-events: auto;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid #39ff14;
+        }
+
+        .notification.error {
+            border-left-color: #ff3333;
+        }
+
+        .notification.info {
+            border-left-color: #00bfff;
+        }
+
+        .notification.warning {
+            border-left-color: #f5b342;
+        }
+
+        .notification .notif-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .notification .notif-text {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .notification .notif-close {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .notification .notif-close:hover {
+            color: #fff;
+        }
+
+        .notification.fade-out {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+        }
+
+        /* ============================================
+        КОНСОЛЬ (скрытая по умолчанию)
+        ============================================ */
+
+        .console-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40vh;
+            background: #0b0b0b;
+            border-top: 1px solid #252525;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Courier New', Courier, monospace;
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        }
+
+        .console-container.visible {
+            transform: translateY(0);
+        }
+
+        .console-header {
+            background: #161616;
+            padding: 6px 20px;
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            flex-shrink: 0;
+        }
+
+        .console-output {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #39ff14;
+        }
+
+        /* Плавное появление записей в консоли */
+        .console-output .log-entry {
+            margin-bottom: 4px;
+            border-left: 3px solid #39ff14;
+            padding-left: 8px;
+            white-space: pre-wrap;
+            animation: consoleEntryIn 0.3s ease;
+        }
+
+        @keyframes consoleEntryIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .console-output .log-entry.err {
+            color: #ff3333;
+            border-color: #ff3333;
+        }
+
+        .console-output .log-entry.info {
+            color: #00bfff;
+            border-color: #00bfff;
+        }
+
+        /* Кнопка переключения консоли с анимацией */
+        .console-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #aaa;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+
+        .console-toggle-btn:hover {
+            background: #252525;
+            color: #fff;
+            border-color: #555;
+            transform: scale(1.05);
+        }
+
+        .console-toggle-btn.active {
+            background: #00439c;
+            color: #fff;
+            border-color: #0056c6;
+            transform: rotate(90deg);
+        }
+
+        .console-toggle-btn.active:hover {
+            transform: rotate(90deg) scale(1.05);
+        }
+
+        /* Кнопка в консоли */
+        .console-clear-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            padding: 2px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .console-clear-btn:hover {
+            background: #2a2a2a;
+            color: #fff;
+        }
+
+        .console-close-btn {
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 8px;
+            transition: color 0.2s;
+        }
+
+        .console-close-btn:hover {
+            color: #fff;
+        }
+
+        /* Бейдж с количеством уведомлений */
+        .notif-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff3333;
+            color: #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(255,0,0,0.3);
+            animation: badgePulse 2s infinite;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }

@@ -89,23 +89,136 @@
                 'tab-player': ' Игрок (MUIP 1116)',
                 'tab-weapons': ' Оружие (MUIP 1116)',
                 'tab-characters': ' Персонажи (MUIP 1116)',
+                'tab-quests': ' Квесты (MUIP 1116)',
+                'tab-items': ' Предметы (MUIP 1116)',
                 
             };
             document.getElementById('current-title').textContent = titleMap[tabId] || tabId;
         }
 
         function logToTerminal(msg, type = "success") {
-            const terminal = document.getElementById('terminal-output');
+            // Добавляем в консоль
+            const consoleOutput = document.getElementById('consoleOutput');
             const entry = document.createElement('div');
             entry.className = `log-entry ${type}`;
             entry.textContent = `[${new Date().toLocaleTimeString()}] ${typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg}`;
-            terminal.appendChild(entry);
-            terminal.scrollTop = terminal.scrollHeight;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // Обновляем счётчик записей
+            const count = consoleOutput.children.length;
+            document.getElementById('console-entry-count').textContent = `${count} записей`;
+            
+            // Показываем уведомление
+            showNotification(msg, type);
         }
 
-        function clearTerminal() {
-            document.getElementById('terminal-output').innerHTML = '';
+        function clearConsole() {
+            const consoleOutput = document.getElementById('consoleOutput');
+            consoleOutput.innerHTML = '';
+            document.getElementById('console-entry-count').textContent = '0 записей';
         }
+
+        function toggleConsole() {
+            const container = document.getElementById('consoleContainer');
+            const btn = document.getElementById('consoleToggleBtn');
+            
+            container.classList.toggle('visible');
+            btn.classList.toggle('active');
+            
+            if (container.classList.contains('visible')) {
+                btn.innerHTML = '<i class="icon-x"></i>';
+                // Прокручиваем вниз
+                const output = document.getElementById('consoleOutput');
+                output.scrollTop = output.scrollHeight;
+            } else {
+                btn.innerHTML = '<i class="icon-terminal"></i><span class="notif-badge" id="notifBadge" style="display:none;">0</span>';
+            }
+}
+
+        // ============================================
+        // СИСТЕМА УВЕДОМЛЕНИЙ
+        // ============================================
+
+        let notificationQueue = [];
+        let isNotificationVisible = false;
+
+        function showNotification(msg, type = "success") {
+            const container = document.getElementById('notification-container');
+            
+            // Определяем иконку в зависимости от типа
+            let icon = '✅';
+            let typeClass = '';
+            if (type === 'err') {
+                icon = '❌';
+                typeClass = 'error';
+            } else if (type === 'info') {
+                icon = 'ℹ️';
+                typeClass = 'info';
+            } else if (type === 'warning') {
+                icon = '⚠️';
+                typeClass = 'warning';
+            }
+            
+            // Создаём уведомление
+            const notif = document.createElement('div');
+            notif.className = `notification ${typeClass}`;
+            
+            // Форматируем сообщение
+            let text = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg;
+            if (text.length > 100) {
+                text = text.substring(0, 100) + '...';
+            }
+            
+            notif.innerHTML = `
+                <span class="notif-icon">${icon}</span>
+                <span class="notif-text">${text}</span>
+                <button class="notif-close" onclick="this.closest('.notification').remove()">✕</button>
+            `;
+            
+            container.appendChild(notif);
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                if (notif.parentNode) {
+                    notif.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (notif.parentNode) {
+                            notif.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+            
+            // Обновляем бейдж на кнопке консоли
+            updateNotifBadge();
+        }
+
+        function updateNotifBadge() {
+            const container = document.getElementById('notification-container');
+            const count = container.children.length;
+            const badge = document.getElementById('notifBadge');
+            
+            if (count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Наблюдатель за изменениями в контейнере уведомлений
+        const observer = new MutationObserver(() => {
+            updateNotifBadge();
+        });
+
+        // Запускаем наблюдатель после загрузки
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('notification-container');
+            if (container) {
+                observer.observe(container, { childList: true, subtree: true });
+            }
+        });
 
         async function sendMuipRequest(cmdId, params = {}) {
             try {
@@ -895,6 +1008,59 @@
         }
 
         let characterCache = [];
+        let questsCache = [];
+
+
+
+
+        function filterQuestsItems() {
+            const query = document.getElementById('quests-search').value.toLowerCase().trim();
+            const container = document.getElementById('quests-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>';
+                return;
+            }
+
+            // Cache quests on first search
+            if (questsCache.length === 0) {
+                questsCache = fullHandbookList.filter(item => {
+                    const id = parseInt(item.id);
+                    return id >= 30302 && id <= 9000101;
+                });
+            }
+
+            const results = questsCache.filter(item => 
+                item.id.toString().includes(query) || 
+                item.name.toLowerCase().includes(query)
+            ).slice(0, 50);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Квест не найден</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                    onclick="selectQuest('${item.id}')"
+                    onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;"> </span>
+                </div>
+            `).join('');
+        }
+
+        function selectQuest(questId) {
+            document.getElementById('quest-id-input').value = questId;
+            document.getElementById('quests-search').value = '';
+            document.getElementById('quests-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Квест выбран, ID подставлен в поле выше</div>';
+        }
+
+
+
+
+
+
 
         // Filter characters from handbook (IDs 10000002+)
         function filterCharacterItems() {
@@ -929,7 +1095,7 @@
                     onclick="selectCharacter('${item.id}')"
                     onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
                     <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
-                    <span style="color: #666; font-size: 12px;">👤</span>
+                    <span style="color: #666; font-size: 12px;"> </span>
                 </div>
             `).join('');
         }
@@ -965,3 +1131,154 @@
             logToTerminal(`🔄 Смена персонажа на: ${charId} для UID ${uid}`, 'info');
             quickGm(`avatar change ${charId}`);
         }
+
+        // ============================================
+        // ФУНКЦИИ ДЛЯ ВЫДАЧИ ПРЕДМЕТОВ (ITEMS)
+        // ============================================
+
+        function setItemCount(value) {
+            document.getElementById('items-count').value = value;
+        }
+
+        function filterItemsList() {
+            const query = document.getElementById('items-search').value.toLowerCase().trim();
+            const container = document.getElementById('items-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска...</div>';
+                return;
+            }
+
+            const results = fullHandbookList.filter(item => 
+                item.id.toString().includes(query) || 
+                item.name.toLowerCase().includes(query)
+            ).slice(0, 50);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Предметы не найдены</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => {
+                let icon = '📦';
+                const id = parseInt(item.id);
+                if (id >= 11101 && id <= 15509) icon = '⚔️';
+                else if (id >= 70000 && id <= 79999) icon = '🏺';
+                else if (id >= 10000001 && id <= 11000042) icon = '👤';
+                else if (id >= 20010101) icon = '🐉';
+                
+                return `
+                    <div style="padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                        onclick="selectItem('${item.id}')"
+                        onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                        <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                        <span style="color: #666; font-size: 12px;">${icon}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectItem(itemId) {
+            document.getElementById('items-id').value = itemId;
+            document.getElementById('items-search').value = '';
+            document.getElementById('items-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Предмет выбран, ID подставлен в поле выше</div>';
+        }
+
+        function sendItems() {
+            const uid = document.getElementById('items-uid').value.trim() || '1';
+            const itemId = document.getElementById('items-id').value.trim();
+            const count = parseInt(document.getElementById('items-count').value) || 1;
+            
+            if (!itemId) {
+                alert(' Введите ID предмета.');
+                return;
+            }
+
+            const idNum = parseInt(itemId);
+            let cmd = '';
+            
+            // Автоматическое определение типа предмета
+            if (idNum >= 10000001 && idNum <= 11000042) {
+                // Персонажи
+                cmd = `avatar add ${itemId}`;
+                logToTerminal(`👤 Выдача персонажа: ${itemId} для UID ${uid}`, 'info');
+            } else if (idNum >= 11101 && idNum <= 15509) {
+                // Оружие (используем equip add с уровнем и пробуждением по умолчанию)
+                cmd = `equip add ${itemId} 90 5`;
+                logToTerminal(`⚔️ Выдача оружия: ${itemId} для UID ${uid} (ур.90, проб.5)`, 'info');
+            } else {
+                // Обычные предметы
+                cmd = `item add ${itemId} ${count}`;
+                logToTerminal(`📦 Выдача предметов: ${itemId} x${count} для UID ${uid}`, 'info');
+            }
+            
+            quickGm(cmd);
+        }
+
+
+    // ============================================
+    // ПЕРЕКЛЮЧЕНИЕ КОМПАКТНОГО РЕЖИМА САЙДБАРА
+    // ============================================
+
+    let sidebarCompact = false;
+
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const title = document.getElementById('sidebar-title');
+        
+        sidebarCompact = !sidebarCompact;
+        
+        if (sidebarCompact) {
+            sidebar.classList.add('compact');
+            toggleBtn.innerHTML = '<i class="icon-chevron-right"></i>';
+            title.textContent = '☰';
+            // Сохраняем состояние
+            localStorage.setItem('sidebarCompact', 'true');
+        } else {
+            sidebar.classList.remove('compact');
+            toggleBtn.innerHTML = '<i class="icon-chevron-left"></i>';
+            title.textContent = 'Панель Управления';
+            localStorage.setItem('sidebarCompact', 'false');
+        }
+    }
+
+    // Восстанавливаем состояние при загрузке
+    window.addEventListener('DOMContentLoaded', () => {
+        const saved = localStorage.getItem('sidebarCompact');
+        if (saved === 'true') {
+            toggleSidebar();
+        }
+    });
+
+    // Добавляем атрибуты data-tooltip для всех кнопок в сайдбаре
+    function addTooltipsToSidebar() {
+        const buttons = document.querySelectorAll('.sidebar button');
+        const tooltips = {
+            'tab-gm': 'GM команды',
+            'tab-player': 'Игрок',
+            'tab-quests': 'Квесты',
+            'tab-teleport': 'Телепорт',
+            'tab-weapons': 'Оружие',
+            'tab-characters': 'Персонажи',
+            'tab-spawn': 'Спавн',
+            'tab-artifact': 'Артефакт',
+            'tab-mail': 'Почта',
+            'tab-muip': 'MUIP',
+            'tab-handbook': 'Справочник',
+            'tab-settings': 'Настройки',
+            'tab-items': 'Предметы'
+        };
+        
+        buttons.forEach(btn => {
+            const id = btn.id.replace('btn-', '');
+            if (tooltips[id]) {
+                btn.setAttribute('data-tooltip', tooltips[id]);
+            }
+        });
+    }
+
+    // Вызываем после загрузки
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(addTooltipsToSidebar, 100);
+    });
