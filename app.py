@@ -12,9 +12,8 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# Локальные пути хранения конфигураций панели
 CONFIG_PATH = 'data/config.json'
-DATA_FILE = 'data.json'
+DATA_FILE = 'data/data.json'
 
 def get_muip_config():
     """Загрузка конфигурационных данных хоста и секретного ключа для MUIP."""
@@ -56,8 +55,9 @@ def save_data(data):
 def parse_handbook():
     """Парсинг справочника ID предметов и персонажей из текстовых файлов."""
     items = []
-    files = glob.glob("*Handbook*.txt") + glob.glob("*.txt")
+    files = glob.glob("data/*Handbook*.txt") + glob.glob("data/*.txt")
     seen = set()
+    
     for f_path in files:
         if "muip_commands" in f_path or "КОМАНДЫ" in f_path:
             continue
@@ -76,185 +76,40 @@ def parse_handbook():
             print(f"Ошибка парсинга файла справочника {f_path}: {e}")
     
     if not items:
-        # Резервные базовые ID, если файлы справочников отсутствуют
-        items = [
-            {"id": "201", "name": "Камень Истока (Primogems)"},
-            {"id": "202", "name": "Мора (Mora)"},
-            {"id": "223", "name": "Переплетающиеся судьбы"},
-            {"id": "224", "name": "Судьбоносные встречи"},
-            {"id": "10000002", "name": "Камисато Аяка"}
-        ]
+        print("Предупреждение: Не найдено ни одного файла справочника. Справочник пуст.")
+    
     return items
 
 def parse_muip_commands():
-    """Сбор доступных MUIP функций из текстового файла или внутреннего словаря."""
+    """Сбор доступных MUIP функций из текстового файла."""
     commands = {}
-    path = "muip_commands.txt"
-    if os.path.exists(path):
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    parts = [p.strip() for p in line.split("=>")]
-                    if len(parts) >= 2:
-                        cmd_id = parts[0]
-                        handler_info = parts[1]
-                        name = handler_info.split("::")[-1]
-                        params = []
-                        if len(parts) >= 3:
-                            params = [p.strip() for p in parts[2].split(",")]
-                        commands[cmd_id] = {"name": name, "params": params}
-        except Exception as e:
-            print(f"Ошибка чтения muip_commands.txt: {e}")
-
+    path = "data/muip_commands.txt"
+    
+    if not os.path.exists(path):
+        print(f"Предупреждение: Файл {path} не найден. MUIP команды не загружены.")
+        return commands
+    
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):  # Пропускаем пустые строки и комментарии
+                    continue
+                parts = [p.strip() for p in line.split("=>")]
+                if len(parts) >= 2:
+                    cmd_id = parts[0]
+                    handler_info = parts[1]
+                    name = handler_info.split("::")[-1]
+                    params = []
+                    if len(parts) >= 3:
+                        params = [p.strip() for p in parts[2].split(",")]
+                    commands[cmd_id] = {"name": name, "params": params}
+    except Exception as e:
+        print(f"Ошибка чтения muip_commands.txt: {e}")
+    
     if not commands:
-        # Полный структурированный список команд из ТЗ
-        raw_list = [
-            "1001 => RequestHandler::queryPlayerAccountUid => uid",
-            "1002 => RequestHandler::queryPlayerUidByAccountUid => account_type, account_uid",
-            "1004 => RequestHandler::queryPlayerBinInfo => uid",
-            "1005 => RequestHandler::sendMail => uid, title, content, sender, expire_time, importance, config_id, item_limit_type, tag, source_type, item_list",
-            "1006 => RequestHandler::queryRedisMailInfo => uid",
-            "1007 => RequestHandler::queryPlayerPostion => uid",
-            "1009 => RequestHandler::queryCombatForce => uid",
-            "1011 => RequestHandler::queryRegions",
-            "1012 => RequestHandler::queryPlayerWorldBinInfo => uid",
-            "1013 => RequestHandler::queryPlayerBlockBinInfo => uid",
-            "1014 => RequestHandler::queryPlayerGroupBinInfo => uid, group_id",
-            "1015 => RequestHandler::queryPlayerQuestBinInfo => uid",
-            "1016 => RequestHandler::queryPlayerItemBinInfo => uid",
-            "1017 => RequestHandler::queryPlayerGroupBinInfo2 => uid, group_id, block_id",
-            "1018 => RequestHandler::queryPlayerCoopBinInfo => uid",
-            "1101 => RequestHandler::getPlayerNum",
-            "1102 => RequestHandler::queryLoginBlackUid => uid",
-            "1103 => RequestHandler::updateLoginBlackUid => uid, begin_time, end_time",
-            "1104 => RequestHandler::delLoginBlackUid => uid",
-            "1105 => RequestHandler::addWhiteAccountUid => account_type, account_uid",
-            "1106 => RequestHandler::isWhiteAccountUid => account_type, account_uid",
-            "1107 => RequestHandler::queryPlayerStatusRedisData => uid",
-            "1108 => RequestHandler::queryPlayerOnline => uid, gameserver_id",
-            "1109 => RequestHandler::delPlayerStatusRedisData => uid, last_login_rand",
-            "1110 => RequestHandler::guestBindAccount => account_id, uid, account_type",
-            "1111 => RequestHandler::delItem => uid, item_id, item_num",
-            "1112 => RequestHandler::playerGoto => uid, scene_id, x, y, z",
-            "1113 => RequestHandler::resetParentQuest => uid, parent_quest_id",
-            "1114 => RequestHandler::refreshGroupSuite => uid, group_id, suite_id",
-            "1115 => RequestHandler::setScenePointLockStatus",
-            "1116 => RequestHandler::gmTalk => uid, msg",
-            "1117 => RequestHandler::setNickName => uid, nickname",
-            "1118 => RequestHandler::refreshShop => uid",
-            "1119 => RequestHandler::unlockTalent => uid, avatar_id, skill_depot_id, talent_id",
-            "1120 => RequestHandler::takeoffEquip => uid, avatar_id, equip_id",
-            "1121 => RequestHandler::delMail => uid, mail_id",
-            "1122 => RequestHandler::finishDailyTask => uid, daily_task_id",
-            "1123 => RequestHandler::queryRedisOfflineMsg => uid",
-            "1124 => RequestHandler::unlockArea => uid, area_id",
-            "1125 => RequestHandler::delItemNegative => uid, item_id, item_num",
-            "1126 => RequestHandler::delEquip => uid, guid",
-            "1127 => RequestHandler::addItem => uid, item_id, item_count, extra_params",
-            "1128 => RequestHandler::modifyBornPos => uid, scene_id, pos",
-            "1129 => RequestHandler::getPlatformPlayerNum",
-            "1134 => RequestHandler::delRedisMail => uid, mail_index, mail_ticket",
-            "1135 => RequestHandler::subCoinNegative => uid, scoin, hcoin, mcoin, is_psn",
-            "1136 => RequestHandler::bindGmUid => gm_uid, player_uid",
-            "1137 => RequestHandler::unBindGmUid => gm_uid",
-            "1138 => RequestHandler::getBindGmUid => app_id",
-            "1139 => RequestHandler::setQuestContentProgress => uid, quest_id, finish_progress, fail_progress",
-            "1140 => RequestHandler::queryOrderDataByUid => uid, begin_trade_time, end_trade_time",
-            "1141 => RequestHandler::queryOrderDataByTradeNo => trade_no",
-            "1143 => RequestHandler::finishOrder => order_id",
-            "1144 => RequestHandler::delRedisMailByTicket => uid, mail_ticket",
-            "1145 => RequestHandler::insertMailBlockTag",
-            "1146 => RequestHandler::batchBlockPlayerChat => block_list",
-            "1147 => RequestHandler::batchUnblockPlayerChat => unblock_uid_list",
-            "1148 => RequestHandler::queryPlayerChatBlockStatus => uid",
-            "1149 => RequestHandler::addOrModifyWatcher => uid, watcher_id, progress",
-            "1150 => RequestHandler::delWatcher => uid, watcher_id",
-            "1151 => RequestHandler::queryPlayerFriendList => uid",
-            "1152 => RequestHandler::checkVersions => server_version, client_version, client_silence_version",
-            "1153 => RequestHandler::queryPlayerBriefData => uid",
-            "1154 => RequestHandler::queryPlayerExtraBinData => uid",
-            "1155 => RequestHandler::updatePlayerSecurityLevel => uid, check_type, security_level",
-            "1156 => RequestHandler::QueryPlayerRegPlatform => uid",
-            "1157 => RequestHandler::addFeatureSwitch => id, type, msg",
-            "1158 => RequestHandler::deleteFeatureSwitch => id",
-            "1159 => RequestHandler::setSignature => uid, signature",
-            "1160 => RequestHandler::addOrSubResin => uid, delta_count, is_sub",
-            "1161 => RequestHandler::setQuestGlobalVarValue => uid, global_var_id, value",
-            "1162 => RequestHandler::changeBindAccount => account_id, uid, account_type",
-            "1163 => RequestHandler::SetUserTag => tag, uids",
-            "1164 => RequestHandler::batchBlockPlayerMp => block_uid_list",
-            "1165 => RequestHandler::batchUnblockPlayerMp => unblock_uid_list",
-            "1166 => RequestHandler::queryPlayerMpBlockStatus => uid",
-            "1167 => RequestHandler::queryCrcSuspiciousList => uid",
-            "1168 => RequestHandler::addToCrcSuspiciousList => uid_list, is_notify",
-            "1169 => RequestHandler::removeFromCrcSuspiciousList => uid_list",
-            "1170 => RequestHandler::checkCrcVersions => platform_type, client_version",
-            "1171 => RequestHandler::forceAcceptQuest => uid, quest_id",
-            "1172 => RequestHandler::setMainCoopConfidence => uid, confidence",
-            "1173 => RequestHandler::addCoopPointSavePointList => uid, coop_point_id, save_point_list, ticket",
-            "1174 => RequestHandler::setFinishParentQuestChildQuestState => uid, quest_id, state",
-            "1175 => RequestHandler::setLevel1AreaExplorePoint => uid, scene_id, level1_area_id, explore_point",
-            "1176 => RequestHandler::setCodexOpenOrClose => uid, codex_type, codex_id, is_open",
-            "1200 => RequestHandler::addMcoinVipPoint => uid, mcoin, vip_point, is_psn",
-            "1201 => RequestHandler::getPlayerLoginPerSecond",
-            "1210 => RequestHandler::getFineGrainedPlayerNum",
-            "1211 => RequestHandler::removeGadgetInGroupByConfigId => uid, scene_id, group_id, config_id",
-            "1212 => RequestHandler::operateDelGadgetInGroupByConfigId => uid, scene_id, group_id, config_id, is_add",
-            "1213 => RequestHandler::operateGadgetStateInGroupByConfigId => uid, scene_id, group_id, config_id, state, is_create",
-            "1214 => RequestHandler::removeMonsterInGroupByConfigId => uid, scene_id, group_id, config_id",
-            "1215 => RequestHandler::operateDelMonsterInGroupByConfigId => uid, scene_id, group_id, config_id, is_add",
-            "1216 => RequestHandler::removeGroupTriggerByName => uid, scene_id, group_id, trigger_name",
-            "1217 => RequestHandler::setGroupTriggerCountByName => uid, scene_id, group_id, trigger_name, trigger_count",
-            "1218 => RequestHandler::setGroupVariableByName => uid, scene_id, group_id, variable_name, value",
-            "1219 => RequestHandler::setGroupTargetSuite => uid, scene_id, group_id, target_suite",
-            "1220 => RequestHandler::removeGroupOneoffByConfigId => uid, scene_id, group_id, config_id, is_monster",
-            "1221 => RequestHandler::finishRoutine => uid, routine_id",
-            "1222 => RequestHandler::finishDailyTaskUnloadGroup => uid, daily_task_id",
-            "1223 => RequestHandler::refreshBlossomCircleCamp => uid, refresh_id, circle_camp_id",
-            "1224 => RequestHandler::queryPlayerShowAvatarInfo => uid, avatar_id",
-            "1225 => RequestHandler::kickOutPlayerByAccountUid => account_type, account_uid",
-            "1226 => RequestHandler::operateSetGroupDead => uid, scene_id, group_id",
-            "1227 => RequestHandler::operateSetGroupUnregister => uid, scene_id, group_id",
-            "1228 => RequestHandler::recoverWorldLevel => uid",
-            "1229 => RequestHandler::addRegionSearchProgress => uid, region_id, add_recycle, add_progress",
-            "1230 => RequestHandler::setMatchPunishTimes => uid, match_id, punish_times",
-            "1231 => RequestHandler::resetChannellerSlabCampGroup => uid, stage_id, round_id",
-            "1232 => RequestHandler::procSceneTag => uid, scene_id, scene_tag_id, op_type",
-            "1233 => RequestHandler::setClimateAreaType => uid, scene_id, climate_area_id, climate_type",
-            "1234 => RequestHandler::exchangeMcoin => uid, num, exchange_type",
-            "1235 => RequestHandler::sendConcertProduct => uid, config_id",
-            "1236 => RequestHandler::updateRedPoint => uid, red_point_list",
-            "1237 => RequestHandler::queryConcertProductInfo => uid, config_id",
-            "1238 => RequestHandler::kickOutPlayerByUid => uid, reason",
-            "1301 => RequestHandler::registerGroupLinkBundle => uid, group_bundle_id, activity_id",
-            "1302 => RequestHandler::finishGroupLinkBundle => uid, group_bundle_id",
-            "1303 => RequestHandler::unregisterGroupLinkBundle => uid, group_bundle_id",
-            "1405 => RequestHandler::AntiAddictNotify => msg_type, account_type, account_uid, msg, level",
-            "5001 => RequestHandler::queryPlayerMemBasicData => uid",
-            "5002 => RequestHandler::queryPlayerMemBasicDataByAccountUid => account_type, account_uid",
-            "5003 => RequestHandler::queryPlayerRedisBasicData => uid",
-            "5004 => RequestHandler::queryPlayerRedisBasicDataByAccountUid => account_type, account_uid",
-            "5005 => RequestHandler::queryPlayerH5ActivityData => uid, h5_schedule_id_list",
-            "6000 => RequestHandler::queryHomeBinInfo => uid",
-            "6001 => RequestHandler::batchBlockHome => block_list",
-            "6002 => RequestHandler::batchUnblockHome => unblock_uid_list",
-            "6004 => RequestHandler::homeRestoreDefaultsArrangement => uid, module_id_list",
-            "6005 => RequestHandler::homeRestoreDefaultsSceneArrangement => uid, module_id, scene_id",
-            "6006 => RequestHandler::queryHomeBlockStatus => uid"
-        ]
-        for line in raw_list:
-            parts = [p.strip() for p in line.split("=>")]
-            if len(parts) >= 2:
-                cmd_id = parts[0]
-                handler_info = parts[1]
-                name = handler_info.split("::")[-1]
-                params = []
-                if len(parts) >= 3:
-                    params = [p.strip() for p in parts[2].split(",")]
-                commands[cmd_id] = {"name": name, "params": params}
+        print("Предупреждение: Не удалось загрузить ни одной MUIP команды.")
+    
     return commands
 
 @app.route('/')
