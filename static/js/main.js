@@ -7,6 +7,7 @@
                 await loadSchema();
                 initMailTab();
                 initArtifactTab();
+                loadQuestPackages();
             });
 
             async function loadState() {
@@ -66,6 +67,7 @@
                 } catch (e) {
                     logToTerminal("Ошибка разбора схемы метаданных: " + e, "err");
                 }
+                
             }
 
         function switchTab(tabId) {
@@ -500,28 +502,29 @@
                     continue;
                 }
 
-                // Проверяем на основную стату (5 цифр, начинается с 150)
-                if (!mainProp && /^150\d{2}$/.test(parts[i])) {
-                    mainProp = parts[i];
-                    continue;
+                // 1. ищет любые 5 цифр (\d{5})
+                if (!mainProp && /^\d{5}$/.test(parts[i])) { 
+                    mainProp = parts[i]; 
+                    continue; 
+                } 
+
+                // \d+ позволяет ID статы быть любой длины (от 1 цифры и более)
+                if (/^\d+[,:=]\d+$/.test(parts[i]) || /^\d+[,:=]\d+$/.test(parts[i].replace(/^,/, ''))) { 
+                    let statPart = parts[i]; 
+                    
+                    if (statPart.startsWith(',')) { 
+                        statPart = statPart.substring(1); 
+                    } 
+                    
+                    const separator = statPart.includes(',') ? ',' : statPart.includes(':') ? ':' : '='; 
+                    const [statId, statValue] = statPart.split(separator); 
+                    
+                    // 3. Убрали проверку на строгую длину в 6 символов (statId.length === 6)
+                    if (statId && /^\d+$/.test(statId)) { 
+                        subStats.push(statId); 
+                    }
                 }
 
-                // Проверяем на второстепенные статы: 501034,2 или 501034:2 или 501034=2
-                if (/^\d{6}[,:=]\d+$/.test(parts[i]) || /^\d{6}[,:=]\d+$/.test(parts[i].replace(/^,/, ''))) {
-                    let statPart = parts[i];
-                    // Убираем запятую в начале если есть
-                    if (statPart.startsWith(',')) {
-                        statPart = statPart.substring(1);
-                    }
-                    
-                    // Разбиваем по разделителю
-                    const separator = statPart.includes(',') ? ',' : statPart.includes(':') ? ':' : '=';
-                    const [statId, statValue] = statPart.split(separator);
-                    
-                    if (statId && statId.length === 6 && /^\d+$/.test(statId)) {
-                        subStats.push(statId);
-                    }
-                }
             }
 
             // Если ID артефакта не нашли, пробуем найти любой 5-значный ID
@@ -1382,3 +1385,255 @@
                 console.error('Ошибка:', e);
             }
         }
+
+        // ============================================
+        // ПАКЕТНОЕ ВЫПОЛНЕНИЕ КВЕСТОВ
+        // ============================================
+
+        let questPackages = [];
+        let currentPackage = null;
+        let currentPackageIndex = 0;
+        let isPackageRunning = false;
+        let isPackagePaused = false;
+        let packageTimer = null;
+
+        async function loadQuestPackages() {
+            try {
+                const response = await fetch('/api/quest_packages/list');
+                questPackages = await response.json();
+                
+                const select = document.getElementById('quest-package-select');
+                select.innerHTML = '<option value="">-- Выберите пакет квестов --</option>';
+                
+                questPackages.forEach((pkg, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = pkg.name;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                logToTerminal('Ошибка загрузки пакетов квестов: ' + e, 'err');
+            }
+        }
+
+        function selectQuestPackage() {
+            const select = document.getElementById('quest-package-select');
+            const index = parseInt(select.value);
+            const preview = document.getElementById('quest-package-preview');
+            const startBtn = document.getElementById('quest-package-start-btn');
+            const stopBtn = document.getElementById('quest-package-stop-btn');
+            const confirmBtn = document.getElementById('quest-package-confirm-btn');
+            const skipRestCheckbox = document.getElementById('quest-package-skip-rest');
+            
+            // Скрываем все кнопки кроме выбора
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'none';
+            confirmBtn.style.display = 'none';
+            
+            if (isNaN(index) || index < 0 || index >= questPackages.length) {
+                preview.innerHTML = '<div style="color: #666; padding: 10px; text-align: center;">Выберите пакет для просмотра</div>';
+                return;
+            }
+            
+            currentPackage = questPackages[index];
+            startBtn.style.display = 'inline-block';
+            
+            // Показываем предпросмотр
+            let html = `<div style="margin-bottom: 10px;"><strong style="color: #fff;">${currentPackage.name}</strong>`;
+            if (currentPackage.description) {
+                html += `<br><span style="color: #888; font-size: 13px;">${currentPackage.description}</span>`;
+            }
+            html += `</div>`;
+            html += `<div style="max-height: 200px; overflow-y: auto; background: #121212; border-radius: 6px; padding: 10px; border: 1px solid #2d2d2d;">`;
+            currentPackage.quests.forEach((quest, i) => {
+                const needRest = quest.need_rest ? '🔄' : '⚡';
+                const cooldown = quest.cooldown ? `(${quest.cooldown/1000}с)` : '';
+                html += `<div style="padding: 4px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; display: flex; justify-content: space-between;">
+                    <span><span style="color: #00bfff;">${i+1}.</span> ${quest.description || quest.id}</span>
+                    <span style="color: #888;">${quest.action} ${needRest} ${cooldown}</span>
+                </div>`;
+            });
+            html += `</div>`;
+            preview.innerHTML = html;
+        }
+
+        async function startQuestPackage() {
+            const select = document.getElementById('quest-package-select');
+            const index = parseInt(select.value);
+            const startBtn = document.getElementById('quest-package-start-btn');
+            const stopBtn = document.getElementById('quest-package-stop-btn');
+            const confirmBtn = document.getElementById('quest-package-confirm-btn');
+            const skipRest = document.getElementById('quest-package-skip-rest').checked;
+            
+            if (isNaN(index) || index < 0 || index >= questPackages.length) {
+                alert('Выберите пакет квестов');
+                return;
+            }
+            
+            // Загружаем полные данные пакета
+            try {
+                const response = await fetch('/api/quest_packages/load', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ filename: questPackages[index].filename })
+                });
+                currentPackage = await response.json();
+            } catch (e) {
+                logToTerminal('Ошибка загрузки пакета: ' + e, 'err');
+                return;
+            }
+            
+            currentPackageIndex = 0;
+            isPackageRunning = true;
+            isPackagePaused = false;
+            
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            confirmBtn.style.display = 'none';
+            
+            logToTerminal(`▶️ Начало выполнения пакета: ${currentPackage.name}`, 'info');
+            
+            // Запускаем выполнение
+            executeNextQuest(skipRest);
+        }
+
+        async function executeNextQuest(skipRest) {
+            if (!isPackageRunning) {
+                return;
+            }
+            
+            const uid = document.getElementById('global-uid').value || '1';
+            const skipRestCheckbox = document.getElementById('quest-package-skip-rest');
+            const confirmBtn = document.getElementById('quest-package-confirm-btn');
+            const startBtn = document.getElementById('quest-package-start-btn');
+            const stopBtn = document.getElementById('quest-package-stop-btn');
+            const progress = document.getElementById('quest-package-progress');
+            
+            // Проверяем, завершили ли мы все квесты
+            if (currentPackageIndex >= currentPackage.quests.length) {
+                isPackageRunning = false;
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                confirmBtn.style.display = 'none';
+                progress.innerHTML = `<span style="color: #39ff14;">✅ Пакет квестов успешно выполнен!</span>`;
+                logToTerminal('✅ Пакет квестов успешно выполнен!', 'success');
+                return;
+            }
+            
+            const quest = currentPackage.quests[currentPackageIndex];
+            const questId = quest.id;
+            const action = quest.action;
+            const needRest = quest.need_rest && !skipRest;
+            const cooldown = quest.cooldown || 0;
+            
+            // Обновляем прогресс
+            progress.innerHTML = `Выполняется: ${currentPackageIndex + 1}/${currentPackage.quests.length} — ${quest.description || questId} (${action})`;
+            
+            // Если нужен rest и не пропускаем
+            if (needRest) {
+                isPackagePaused = true;
+                confirmBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'inline-block';
+                progress.innerHTML = `⏸️ ${currentPackageIndex + 1}/${currentPackage.quests.length} — ${quest.description || questId} (${action}) — ожидает подтверждения`;
+                logToTerminal(`⏸️ Ожидание подтверждения для квеста ${questId} (${action})`, 'warning');
+                return;
+            }
+            
+            // Выполняем квест
+            try {
+                const response = await fetch('/api/quest_packages/execute_step', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        quest_id: questId,
+                        action: action,
+                        uid: uid,
+                        cooldown: cooldown
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logToTerminal(`✅ Квест ${questId} (${action}) выполнен`, 'success');
+                    
+                    // Увеличиваем индекс
+                    currentPackageIndex++;
+                    
+                    // Если есть cooldown, ждем перед следующим квестом
+                    if (cooldown > 0) {
+                        progress.innerHTML = `⏳ Ожидание ${cooldown/1000}с перед следующим квестом...`;
+                        await new Promise(resolve => setTimeout(resolve, cooldown));
+                    }
+                    
+                    // Переходим к следующему
+                    executeNextQuest(skipRest);
+                } else {
+                    logToTerminal(`❌ Ошибка выполнения квеста ${questId}: ${result.error}`, 'err');
+                    isPackageRunning = false;
+                    startBtn.style.display = 'inline-block';
+                    stopBtn.style.display = 'none';
+                    confirmBtn.style.display = 'none';
+                    progress.innerHTML = `<span style="color: #ff3333;">❌ Ошибка: ${result.error}</span>`;
+                }
+            } catch (e) {
+                logToTerminal(`❌ Ошибка выполнения квеста ${questId}: ${e}`, 'err');
+                isPackageRunning = false;
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                confirmBtn.style.display = 'none';
+                progress.innerHTML = `<span style="color: #ff3333;">❌ Ошибка: ${e.message}</span>`;
+            }
+        }
+
+        function confirmQuestPackage() {
+            const confirmBtn = document.getElementById('quest-package-confirm-btn');
+            const skipRest = document.getElementById('quest-package-skip-rest').checked;
+            
+            if (!isPackagePaused) {
+                return;
+            }
+            
+            isPackagePaused = false;
+            confirmBtn.style.display = 'none';
+            
+            logToTerminal('✅ Подтверждено, продолжаем выполнение', 'info');
+            
+            // ВАЖНО: увеличиваем индекс после подтверждения
+            currentPackageIndex++;
+            
+            // Проверяем, не завершили ли мы все квесты
+            if (currentPackageIndex >= currentPackage.quests.length) {
+                isPackageRunning = false;
+                document.getElementById('quest-package-start-btn').style.display = 'inline-block';
+                document.getElementById('quest-package-stop-btn').style.display = 'none';
+                confirmBtn.style.display = 'none';
+                document.getElementById('quest-package-progress').innerHTML = `<span style="color: #39ff14;">✅ Пакет квестов успешно выполнен!</span>`;
+                logToTerminal('✅ Пакет квестов успешно выполнен!', 'success');
+                return;
+            }
+            
+            // Переходим к следующему квесту
+            executeNextQuest(skipRest);
+        }
+
+        function stopQuestPackage() {
+            const startBtn = document.getElementById('quest-package-start-btn');
+            const stopBtn = document.getElementById('quest-package-stop-btn');
+            const confirmBtn = document.getElementById('quest-package-confirm-btn');
+            const progress = document.getElementById('quest-package-progress');
+            
+            isPackageRunning = false;
+            isPackagePaused = false;
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            confirmBtn.style.display = 'none';
+            
+            progress.innerHTML = `<span style="color: #ff3333;">⏹️ Выполнение остановлено</span>`;
+            logToTerminal('⏹️ Выполнение пакета остановлено пользователем', 'warning');
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuestPackages();
+        });

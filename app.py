@@ -8,6 +8,7 @@ import hashlib
 import random
 import string
 import urllib.parse
+import time
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
@@ -172,6 +173,102 @@ def execute_muip():
             return jsonify({"retcode": 0, "raw_response": res.text, "url_debug": url})
     except Exception as e:
         return jsonify({"retcode": -1, "message": str(e)}), 500
+
+
+# Получение списка доступных пакетов квестов
+@app.route('/api/quest_packages/list', methods=['GET'])
+def get_quest_packages():
+    packages = []
+    quests_dir = 'data/quests'
+    
+    if not os.path.exists(quests_dir):
+        return jsonify([])
+    
+    for file_path in glob.glob(os.path.join(quests_dir, '*.json')):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                packages.append({
+                    'filename': os.path.basename(file_path),
+                    'name': data.get('name', os.path.basename(file_path)),
+                    'description': data.get('description', ''),
+                    'quests': data.get('quests', [])
+                })
+        except Exception as e:
+            print(f"Ошибка загрузки пакета {file_path}: {e}")
+    
+    return jsonify(packages)
+
+# Загрузка конкретного пакета
+@app.route('/api/quest_packages/load', methods=['POST'])
+def load_quest_package():
+    data = request.json
+    filename = data.get('filename')
+    
+    if not filename:
+        return jsonify({'error': 'Filename required'}), 400
+    
+    file_path = os.path.join('data/quests', filename)
+    
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'Package not found'}), 404
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            package_data = json.load(f)
+            return jsonify(package_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Выполнение пакета квестов (для кнопки "Подтвердить")
+@app.route('/api/quest_packages/execute_step', methods=['POST'])
+def execute_quest_step():
+    data = request.json
+    quest_id = data.get('quest_id')
+    action = data.get('action')  # 'accept' или 'finish'
+    uid = data.get('uid', '1')
+    cooldown = data.get('cooldown', 0)
+    
+    if not quest_id or not action:
+        return jsonify({'error': 'Quest ID and action required'}), 400
+    
+    # Формируем команду
+    cmd = f"quest {action} {quest_id}"
+    
+    # Выполняем через sendMuipRequest (используем существующую функцию)
+    # Но для ответа из бэкенда вызываем напрямую MUIP
+    try:
+        config = get_muip_config()
+        query_params = {
+            "region": "dev_docker",
+            "ticket": "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+            "cmd": "1116",
+            "uid": uid,
+            "msg": cmd
+        }
+        
+        sorted_keys = sorted(query_params.keys())
+        kvs = [f"{k}={query_params[k]}" for k in sorted_keys]
+        query_string = "&".join(kvs)
+        
+        sign = sha256_sign(config['sign'], query_string)
+        quoted_query = urllib.parse.quote_plus(query_string, safe='=&')
+        url = f"{config['host']}/api?{quoted_query}&sign={sign}"
+        
+        res = requests.get(url, timeout=5)
+        
+        # Если есть cooldown - ждем
+        if cooldown > 0:
+            time.sleep(cooldown / 1000.0)
+        
+        return jsonify({
+            'success': True,
+            'quest_id': quest_id,
+            'action': action,
+            'response': res.text
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8483, debug=True)

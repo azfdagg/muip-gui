@@ -292,6 +292,53 @@
                         </div>
                     </div>
                 </div>
+
+                                <!-- Новая карточка: Пакетное выполнение квестов -->
+                <div class="card" style="border-color: #00439c; background: #161616;">
+                    <h4><i class="icon-notebook-tabs"></i> Пакетное выполнение квестов</h4>
+                    
+                    <!-- Выбор пакета -->
+                    <div class="form-group">
+                        <label>Выберите пакет квестов:</label>
+                        <select id="quest-package-select" onchange="selectQuestPackage()" style="width: 100%;">
+                            <option value="">-- Загрузка пакетов... --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Предпросмотр -->
+                    <div id="quest-package-preview" style="margin: 10px 0 15px 0; min-height: 80px; background: #121212; border-radius: 6px; padding: 10px; border: 1px solid #2d2d2d;">
+                        <div style="color: #666; padding: 10px; text-align: center;">Выберите пакет для просмотра</div>
+                    </div>
+                    
+                    <!-- Прогресс выполнения -->
+                    <div id="quest-package-progress" style="font-size: 13px; color: #aaa; margin: 10px 0; min-height: 24px;">
+                        
+                    </div>
+                    
+                    <!-- Управление -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <button class="action-btn" id="quest-package-start-btn" onclick="startQuestPackage()" style="display: none;">
+                            <i class="icon-play"></i> Начать выполнение
+                        </button>
+                        <button class="action-btn danger" id="quest-package-stop-btn" onclick="stopQuestPackage()" style="display: none;">
+                            <i class="icon-square"></i> Остановить
+                        </button>
+                        <button class="action-btn secondary" id="quest-package-confirm-btn" onclick="confirmQuestPackage()" style="display: none; background: #1d7a3a; border-color: #2a9a4a;">
+                            <i class="icon-check"></i> Подтвердить выполнение 
+                        </button>
+                        <label style="display: flex; align-items: center; gap: 8px; color: #aaa; font-size: 13px; cursor: pointer;">
+                            <input type="checkbox" id="quest-package-skip-rest">
+                            <span>Пропускать паузы (need-rest)</span>
+                        </label>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #888; margin-top: 10px;">
+                        <i class="icon-lightbulb"></i> 
+                        <strong>need-rest</strong> — квест с кат-сценой. После выполнения такого квеста дождитесь окончания диалога и нажмите "Подтвердить".
+                        <br>
+                        <strong>Cooldown</strong> — задержка в секундах между командами.
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -590,6 +637,7 @@
                             <button class="quick-badge" onclick="quickGm('stamina infinite off')"><i class="icon-sparkles"></i> Бесконечная стамина ВЫКЛ</button>
                             <button class="quick-badge" onclick="quickGm('talent unlock all')"><i class="icon-sparkles"></i> Открыть все созвездия</button>
                             <button class="quick-badge" onclick="quickGm('point 3 all')"><i class="icon-book"></i> Разблокировать все точки ТП (3)</button>
+                            <button class="quick-badge" onclick="quickGm('item add all')"><i class="icon-gift"></i> Выдать ВСЕ предметы</button>
                         </div>
                     </div>
                 </div>
