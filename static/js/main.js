@@ -1233,69 +1233,152 @@
         }
 
 
-    // ============================================
-    // ПЕРЕКЛЮЧЕНИЕ КОМПАКТНОГО РЕЖИМА САЙДБАРА
-    // ============================================
+        // ============================================
+        // ПЕРЕКЛЮЧЕНИЕ КОМПАКТНОГО РЕЖИМА САЙДБАРА
+        // ============================================
 
-    let sidebarCompact = false;
+        let sidebarCompact = false;
 
-    function toggleSidebar() {
-        const sidebar = document.querySelector('.sidebar');
-        const toggleBtn = document.getElementById('sidebar-toggle-btn');
-        const title = document.getElementById('sidebar-title');
-        
-        sidebarCompact = !sidebarCompact;
-        
-        if (sidebarCompact) {
-            sidebar.classList.add('compact');
-            toggleBtn.innerHTML = '<i class="icon-chevron-right"></i>';
-            title.textContent = '☰';
-            // Сохраняем состояние
-            localStorage.setItem('sidebarCompact', 'true');
-        } else {
-            sidebar.classList.remove('compact');
-            toggleBtn.innerHTML = '<i class="icon-chevron-left"></i>';
-            title.textContent = 'Панель Управления';
-            localStorage.setItem('sidebarCompact', 'false');
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.getElementById('sidebar-toggle-btn');
+            const title = document.getElementById('sidebar-title');
+            
+            sidebarCompact = !sidebarCompact;
+            
+            if (sidebarCompact) {
+                sidebar.classList.add('compact');
+                toggleBtn.innerHTML = '<i class="icon-chevron-right"></i>';
+                title.textContent = '☰';
+                // Сохраняем состояние
+                localStorage.setItem('sidebarCompact', 'true');
+            } else {
+                sidebar.classList.remove('compact');
+                toggleBtn.innerHTML = '<i class="icon-chevron-left"></i>';
+                title.textContent = 'Панель Управления';
+                localStorage.setItem('sidebarCompact', 'false');
+            }
         }
-    }
 
-    // Восстанавливаем состояние при загрузке
-    window.addEventListener('DOMContentLoaded', () => {
-        const saved = localStorage.getItem('sidebarCompact');
-        if (saved === 'true') {
-            toggleSidebar();
-        }
-    });
-
-    // Добавляем атрибуты data-tooltip для всех кнопок в сайдбаре
-    function addTooltipsToSidebar() {
-        const buttons = document.querySelectorAll('.sidebar button');
-        const tooltips = {
-            'tab-gm': 'GM команды',
-            'tab-player': 'Игрок',
-            'tab-quests': 'Квесты',
-            'tab-teleport': 'Телепорт',
-            'tab-weapons': 'Оружие',
-            'tab-characters': 'Персонажи',
-            'tab-spawn': 'Спавн',
-            'tab-artifact': 'Артефакт',
-            'tab-mail': 'Почта',
-            'tab-muip': 'MUIP',
-            'tab-handbook': 'Справочник',
-            'tab-settings': 'Настройки',
-            'tab-items': 'Предметы'
-        };
-        
-        buttons.forEach(btn => {
-            const id = btn.id.replace('btn-', '');
-            if (tooltips[id]) {
-                btn.setAttribute('data-tooltip', tooltips[id]);
+        // Восстанавливаем состояние при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('sidebarCompact');
+            if (saved === 'true') {
+                toggleSidebar();
             }
         });
-    }
 
-    // Вызываем после загрузки
-    window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(addTooltipsToSidebar, 100);
-    });
+        // Добавляем атрибуты data-tooltip для всех кнопок в сайдбаре
+        function addTooltipsToSidebar() {
+            const buttons = document.querySelectorAll('.sidebar button');
+            const tooltips = {
+                'tab-gm': 'GM команды',
+                'tab-player': 'Игрок',
+                'tab-quests': 'Квесты',
+                'tab-teleport': 'Телепорт',
+                'tab-weapons': 'Оружие',
+                'tab-characters': 'Персонажи',
+                'tab-spawn': 'Спавн',
+                'tab-artifact': 'Артефакт',
+                'tab-mail': 'Почта',
+                'tab-muip': 'MUIP',
+                'tab-handbook': 'Справочник',
+                'tab-settings': 'Настройки',
+                'tab-items': 'Предметы'
+            };
+            
+            buttons.forEach(btn => {
+                const id = btn.id.replace('btn-', '');
+                if (tooltips[id]) {
+                    btn.setAttribute('data-tooltip', tooltips[id]);
+                }
+            });
+        }
+
+        // Вызываем после загрузки
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(addTooltipsToSidebar, 100);
+        });
+
+        // ============================================
+        // ОПРЕДЕЛЕНИЕ ПОЗИЦИИ ИГРОКА (MUIP 1007)
+        // ============================================
+
+        async function getPlayerPosition() {
+            const uid = document.getElementById('global-uid').value.trim();
+            if (!uid) {
+                logToTerminal('❌ Глобальный UID не задан', 'err');
+                return;
+            }
+
+            logToTerminal(`📍 Запрос позиции для UID ${uid}...`, 'info');
+            
+            try {
+                const response = await fetch('/api/execute_muip', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        cmd_id: '1007', 
+                        params: { uid: uid }
+                    })
+                });
+                
+                const resData = await response.json();
+                
+                // Логируем структуру ответа
+                console.log('Полный ответ:', resData);
+                console.log('Тип resData.data:', typeof resData.data);
+                console.log('resData.data:', resData.data);
+                
+                if (resData.retcode === 0 && resData.data) {
+                    // Получаем данные
+                    let dataStr = resData.data;
+                    
+                    // Если data - объект и у него есть поле data, берем его
+                    if (typeof dataStr === 'object' && dataStr.data) {
+                        dataStr = dataStr.data;
+                    }
+                    
+                    // Если dataStr все еще объект, но есть поле data внутри
+                    if (typeof dataStr === 'object' && dataStr.data) {
+                        dataStr = dataStr.data;
+                    }
+                    
+                    // Принудительно преобразуем в строку, если это не строка
+                    if (typeof dataStr !== 'string') {
+                        dataStr = JSON.stringify(dataStr);
+                    }
+                    
+                    console.log('Строка для парсинга:', dataStr);
+                    
+                    // Парсим строку
+                    const sceneMatch = dataStr.match(/scene_id:(\d+)/);
+                    const posMatch = dataStr.match(/scene_pos:([\d.\-]+),([\d.\-]+),([\d.\-]+)/);
+                    
+                    if (sceneMatch && posMatch) {
+                        const sceneId = sceneMatch[1];
+                        const x = parseFloat(posMatch[1]).toFixed(2);
+                        const y = parseFloat(posMatch[2]).toFixed(2);
+                        const z = parseFloat(posMatch[3]).toFixed(2);
+                        
+                        // Заполняем поля
+                        document.getElementById('teleport-scene-input').value = sceneId;
+                        document.getElementById('teleport-x').value = x;
+                        document.getElementById('teleport-y').value = y;
+                        document.getElementById('teleport-z').value = z;
+                        
+                        document.getElementById('teleport-current-coords').textContent = 
+                            ` Сцена: ${sceneId} | X: ${x} | Y: ${y} | Z: ${z}`;
+                        
+                        logToTerminal(`✅ Позиция получена: Сцена ${sceneId} (${x}, ${y}, ${z})`, 'success');
+                    } else {
+                        logToTerminal('⚠️ Не удалось распарсить координаты из: ' + dataStr, 'warning');
+                    }
+                } else {
+                    logToTerminal('❌ Ошибка получения позиции: ' + (resData.message || resData.msg || 'неизвестная ошибка'), 'err');
+                }
+            } catch (e) {
+                logToTerminal('❌ Сетевая ошибка: ' + e.message, 'err');
+                console.error('Ошибка:', e);
+            }
+        }

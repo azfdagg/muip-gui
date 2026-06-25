@@ -342,6 +342,24 @@
                         </div>
                     </div>
                 </div>
+                <!-- Блок определения позиции -->
+                <div class="card" style="background: #161616; border-color: #00439c;">
+                    <h4><i class="icon-crosshair"></i> Определить позицию игрока (MUIP 1007)</h4>
+
+                    <div id="teleport-current-coords" style="background: #121212; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #39ff14; border: 1px solid #2d2d2d; min-height: 20px;">
+                        <span style="color: #666;"> Нажмите "Получить позицию"</span>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px; margin-bottom: 10px; justify-content: flex-start;">
+                        <button class="action-btn" onclick="getPlayerPosition()">
+                            <i class="icon-crosshair"></i> Получить позицию
+                        </button>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #888; margin-top: 8px;">
+                        <i class="icon-lightbulb"></i> Координаты автоматически подставятся в поля выше.
+                    </div>
+                </div>
             </div>
         </div>
 
