@@ -1,6 +1,5 @@
 
 data/data.json
-data/quests/
 data/quests/*
 !data/quests/.gitkeep
 !data/quests/unlock_basic.json

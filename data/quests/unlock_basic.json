@@ -1,0 +1,48 @@
+{
+  "name": "Разблокировка базовых функций",
+  "description": "Открывает мультиплеер, крутки и полет (с автоматической паузой для кат-сцен)",
+  "quests": [
+    {
+      "id": "30904",
+      "action": "accept",
+      "need_rest": false,
+      "cooldown": 0,
+      "description": "Unlock Multiplayer (принять)"
+    },
+    {
+      "id": "30904",
+      "action": "finish",
+      "need_rest": true,
+      "cooldown": 3000, 
+      "description": "Unlock Multiplayer (завершить)"
+    },
+    {
+      "id": "35801",
+      "action": "accept",
+      "need_rest": false,
+      "cooldown": 3000,
+      "description": "Unlock Wish (принять)"
+    },
+    {
+      "id": "35801",
+      "action": "finish",
+      "need_rest": true,
+      "cooldown": 3000,
+      "description": "Unlock Wish (завершить)"
+    },
+    {
+      "id": "35603",
+      "action": "accept",
+      "need_rest": false,
+      "cooldown": 3000,
+      "description": "Unlock Fly (принять)"
+    },
+        {
+      "id": "35603",
+      "action": "finish",
+      "need_rest": false,
+      "cooldown": 3000,
+      "description": "Unlock Fly (завершить)"
+    }
+  ]
+}
