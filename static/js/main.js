@@ -146,6 +146,12 @@
         function showNotification(msg, type = "success") {
             const container = document.getElementById('notification-container');
             
+            // Проверяем, существует ли контейнер
+            if (!container) {
+                console.warn('Контейнер уведомлений не найден');
+                return;
+            }
+            
             // Определяем иконку в зависимости от типа
             let icon = '✅';
             let typeClass = '';
