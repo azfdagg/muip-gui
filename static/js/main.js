@@ -1637,3 +1637,280 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadQuestPackages();
         });
+        // ============================================
+        //  КАРЕТКА — ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
+        // ============================================
+
+        (function() {
+            
+            // === ШАГ 1: Преобразуем все поля ввода ===
+            document.querySelectorAll('input, textarea').forEach(el => {
+                if (el.closest('.input-container')) return;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'input-container';
+                wrapper.style.cssText = 'position:relative;display:block;width:100%;';
+                
+                el.parentNode.insertBefore(wrapper, el);
+                wrapper.appendChild(el);
+                
+                const caret = document.createElement('div');
+                caret.className = 'custom-caret';
+                caret.style.cssText = `
+                    position: absolute;
+                    left: 10px;
+                    top: 50%;
+                    transform: translateY(-50%) scaleY(3.5);
+                    width: 2px;
+                    height: 20px;
+                    background: #007aff;
+                    border-radius: 2px;
+                    pointer-events: none;
+                    display: none;
+                    z-index: 2;
+                    box-shadow: 0 0 6px rgba(0, 122, 255, 0.2);
+                    transition: left 0.08s cubic-bezier(0.22, 1, 0.36, 1),
+                                transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                                opacity 0.25s ease;
+                    transform-origin: center center;
+                `;
+                wrapper.appendChild(caret);
+                el.classList.add('smooth-input');
+            });
+
+            const inputs = document.querySelectorAll('.smooth-input');
+
+
+
+
+            // === ШАГ 2: Настройка измерения текста ===
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Хранилище для плавных позиций (для всех полей)
+            const smoothPositions = new Map();
+
+            // === ШАГ 3: Функция обновления позиции каретки ===
+            function updateCaret(input) {
+                const container = input.closest('.input-container');
+                if (!container) return;
+                const caret = container.querySelector('.custom-caret');
+                if (!caret) return;
+                if (document.activeElement !== input) return;
+
+                try {
+                    const style = getComputedStyle(input);
+                    const font = style.font || `${style.fontSize} ${style.fontFamily}`;
+                    const paddingLeft = parseFloat(style.paddingLeft) || 10;
+                    const paddingTop = parseFloat(style.paddingTop) || 10;
+                    
+                    // Получаем текст до позиции курсора (работает для всех полей)
+                    const selStart = input.selectionStart || input.value.length || 0;
+                    const textBeforeCaret = input.value.substring(0, selStart);
+                    
+                    ctx.font = font;
+                    const width = ctx.measureText(textBeforeCaret).width;
+                    const scrollLeft = input.scrollLeft || 0;
+                    let targetX = paddingLeft + width - scrollLeft;
+                    
+                    const maxX = input.clientWidth - 5;
+                    if (targetX > maxX) targetX = maxX;
+                    if (targetX < paddingLeft) targetX = paddingLeft;
+                    
+                    if (!smoothPositions.has(input)) {
+                        smoothPositions.set(input, { current: targetX, target: targetX });
+                    }
+                    
+                    const pos = smoothPositions.get(input);
+                    pos.target = targetX;
+                    const diff = pos.target - pos.current;
+                    pos.current += diff * 0.35;
+                    caret.style.left = pos.current + 'px';
+                    
+                    // Вертикальная позиция
+                    if (input.tagName === 'TEXTAREA') {
+                        const scrollTop = input.scrollTop || 0;
+                        const textBeforeCaretLines = textBeforeCaret.split('\n').length - 1;
+                        const lineHeight = parseFloat(style.lineHeight) || 20;
+                        const caretY = paddingTop + (textBeforeCaretLines * lineHeight) - scrollTop;
+                        caret.style.top = caretY + 'px';
+                        caret.style.transform = 'none';
+                    } else {
+                        caret.style.top = '50%';
+                        caret.style.transform = 'translateY(-50%) scaleY(1)';
+                    }
+                    
+                    // Динамическая высота каретки
+                    const fontSize = parseFloat(style.fontSize) || 14;
+                    const lineHeightNum = parseFloat(style.lineHeight) || fontSize * 1.5;
+                    const caretHeight = Math.min(fontSize * 1.2, lineHeightNum);
+                    caret.style.height = caretHeight + 'px';
+                    
+                } catch (e) {
+                    // Игнорируем ошибки
+                }
+            }
+
+            function forceUpdate(input) {
+                requestAnimationFrame(() => updateCaret(input));
+            }
+
+            // === ШАГ 4: Анимация появления ===
+            let lastInput = null;
+            let animationTimeout = null;
+
+            function animateCaret(input) {
+                if (!input || lastInput === input) return;
+                
+                const container = input.closest('.input-container');
+                if (!container) return;
+                const caret = container.querySelector('.custom-caret');
+                if (!caret) return;
+                
+                lastInput = input;
+                if (animationTimeout) clearTimeout(animationTimeout);
+                
+                // Показываем каретку — прозрачная и большая
+                caret.style.display = 'block';
+                caret.style.transition = 'none';
+                caret.style.transform = input.tagName === 'TEXTAREA' ? 'scaleY(5)' : 'translateY(-50%) scaleY(5)';
+                caret.style.opacity = '0';
+                
+                void caret.offsetHeight;
+                
+                // Запускаем анимацию
+                requestAnimationFrame(() => {
+                    caret.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease';
+                    if (input.tagName === 'TEXTAREA') {
+                        caret.style.transform = 'scaleY(1)';
+                    } else {
+                        caret.style.transform = 'translateY(-50%) scaleY(1)';
+                    }
+                    caret.style.opacity = '1';
+                });
+                
+                animationTimeout = setTimeout(() => {
+                    lastInput = null;
+                }, 400);
+            }
+
+            // === ШАГ 5: Настройка событий для всех полей ===
+            inputs.forEach(input => {
+                // Фокус
+                input.addEventListener('focus', function() {
+                    animateCaret(this);
+                    setTimeout(() => forceUpdate(this), 50);
+                });
+
+                // Ввод текста
+                input.addEventListener('input', function() {
+                    forceUpdate(this);
+                });
+
+                // Клик
+                input.addEventListener('click', function() {
+                    animateCaret(this);
+                    setTimeout(() => forceUpdate(this), 50);
+                });
+
+                // Изменение (для числовых полей)
+                input.addEventListener('change', function() {
+                    forceUpdate(this);
+                });
+
+                // Клавиши со стрелками и навигация
+                input.addEventListener('keyup', function(e) {
+                    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+                        forceUpdate(this);
+                    }
+                });
+
+                // === ВЫДЕЛЕНИЕ ТЕКСТА (перетягивание мышью) — ДЛЯ ВСЕХ ПОЛЕЙ ===
+                input.addEventListener('select', function() {
+                    forceUpdate(this);
+                });
+
+                // === ОТСЛЕЖИВАНИЕ МЫШИ ПРИ ВЫДЕЛЕНИИ ===
+                input.addEventListener('mousemove', function(e) {
+                    if (e.buttons === 1 && document.activeElement === this) {
+                        forceUpdate(this);
+                    }
+                });
+
+                // === ОТПУСКАНИЕ МЫШИ ПОСЛЕ ВЫДЕЛЕНИЯ ===
+                input.addEventListener('mouseup', function() {
+                    if (document.activeElement === this) {
+                        forceUpdate(this);
+                    }
+                });
+
+                // Потеря фокуса
+                input.addEventListener('blur', function() {
+                    const container = this.closest('.input-container');
+                    if (container) {
+                        const caret = container.querySelector('.custom-caret');
+                        if (caret) {
+                            caret.style.display = 'none';
+                            caret.style.opacity = '0';
+                        }
+                    }
+                    if (smoothPositions.has(this)) {
+                        smoothPositions.delete(this);
+                    }
+                });
+
+                // Скролл внутри поля (для textarea)
+                input.addEventListener('scroll', function() {
+                    if (document.activeElement === this) forceUpdate(this);
+                });
+
+                // Инициализация
+                setTimeout(() => {
+                    if (!smoothPositions.has(input)) {
+                        smoothPositions.set(input, { current: 10, target: 10 });
+                    }
+                }, 100);
+            });
+
+            // === ШАГ 6: Глобальные обработчики ===
+            // Отслеживаем изменение выделения (для всех полей)
+            document.addEventListener('selectionchange', function() {
+                const active = document.activeElement;
+                if (active && active.classList && active.classList.contains('smooth-input')) {
+                    forceUpdate(active);
+                }
+            });
+
+            // Изменение размера окна
+            window.addEventListener('resize', function() {
+                document.querySelectorAll('.smooth-input').forEach(input => {
+                    if (document.activeElement === input) forceUpdate(input);
+                });
+            });
+
+            // === ШАГ 7: Анимационный цикл для плавности ===
+            function animationLoop() {
+                document.querySelectorAll('.smooth-input').forEach(input => {
+                    if (document.activeElement === input) {
+                        const pos = smoothPositions.get(input);
+                        if (pos) {
+                            const container = input.closest('.input-container');
+                            if (container) {
+                                const caret = container.querySelector('.custom-caret');
+                                if (caret && caret.style.display !== 'none') {
+                                    const diff = pos.target - pos.current;
+                                    if (Math.abs(diff) > 0.1) {
+                                        pos.current += diff * 0.35;
+                                        caret.style.left = pos.current + 'px';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                requestAnimationFrame(animationLoop);
+            }
+
+            setTimeout(animationLoop, 100);
+
+        })();

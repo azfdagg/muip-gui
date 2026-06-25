@@ -10,7 +10,7 @@
         .header h2 { margin: 0; font-size: 20px; font-weight: 500; color: #fff; }
         .global-uid-box { display: flex; align-items: center; gap: 10px; background: #222; padding: 6px 12px; border-radius: 6px; border: 1px solid #333; }
         .global-uid-box label { font-size: 13px; color: #aaa; }
-        .global-uid-box input { background: #141414; border: 1px solid #444; color: #fff; padding: 4px 8px; width: 90px; border-radius: 4px; font-family: monospace; font-size: 14px; text-align: center; }
+        .global-uid-box input { background: #141414; border: 1px solid #444; color: #fff; padding: 4px 8px; width: 90px; border-radius: 4px; font-family: monospace; font-size: 14px; }
         
         .content-area { flex: 1; padding: 25px; overflow-y: auto; display: none; }
         .content-area.active { display: block; }
@@ -429,4 +429,66 @@
             50% {
                 transform: scale(1.1);
             }
+        }
+        /* ============================================
+        КАРЕТКА 
+        ============================================ */
+
+        .input-container {
+            position: relative;
+            display: block;
+            width: 100%;
+        }
+
+        .smooth-input {
+            width: 100%;
+            caret-color: transparent !important;
+            padding: 10px;
+            font-size: 14px;
+            background: #252525;
+            border: 1px solid #3d3d3d;
+            color: #fff;
+            border-radius: 6px;
+            outline: none;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+        }
+
+        .smooth-input:focus {
+            border-color: #00439c;
+        }
+
+        .custom-caret {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%) scaleY(3.5);
+            width: 2px;
+            height: 20px;
+            background: #007aff;
+            border-radius: 2px;
+            pointer-events: none;
+            display: none;
+            z-index: 2;
+            box-shadow: 0 0 6px rgba(0, 122, 255, 0.2);
+            transform-origin: center center;
+            transition: left 0.08s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                        opacity 0.3s ease;
+        }
+
+        /* Для textarea */
+        .input-container textarea.smooth-input + .custom-caret {
+            top: 12px;
+            transform: scaleY(3.5);
+            transform-origin: center center;
+            height: 18px;
+        }
+
+        /* Тёмная тема */
+        body.dark-theme .custom-caret,
+        [data-theme="dark"] .custom-caret {
+            background: #4d6bfe;
+            box-shadow: 0 0 8px rgba(77, 107, 254, 0.3);
         }

@@ -71,7 +71,7 @@
                 </div>
                 <div class="form-group">
                     <label>Уровень артефакта (0-21, где 21 = макс. 20):</label>
-                    <input type="number" id="artifact-level" value="21" min="0" max="21">
+                    <input type="text" id="artifact-level" value="21" min="0" max="21">
                 </div>
                 <div class="form-group">
                     <label>Основная характеристика (main_prop_id):</label>
@@ -124,14 +124,14 @@
                         <div class="form-group">
                             <label>Уровень приключений (1-60):</label>
                             <div style="display:flex; gap:10px;">
-                                <input type="number" id="player-level-input" value="1" min="1" max="60" style="flex:1;">
+                                <input type="text" id="player-level-input" value="1" min="1" max="60" style="flex:1;">
                                 <button class="action-btn" onclick="setPlayerLevel()">Установить</button>
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Добавить опыт:</label>
                             <div style="display:flex; gap:10px;">
-                                <input type="number" id="player-exp-input" value="1000" min="1" style="flex:1;">
+                                <input type="text" id="player-exp-input" value="1000" min="1" style="flex:1;">
                                 <button class="action-btn" onclick="addPlayerExp()"><i class="icon-plus"></i> Добавить</button>
                             </div>
                         </div>
@@ -158,28 +158,28 @@
                         <div class="form-group">
                             <label>Камень Истока (Primogems):</label>
                             <div style="display:flex; gap:10px;">
-                                <input type="number" id="player-primogems-input" value="10000" min="1" style="flex:1;">
+                                <input type="text" id="player-primogems-input" value="10000" min="1" style="flex:1;">
                                 <button class="action-btn" onclick="addPrimogems()">Выдать</button>
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Мора (Mora):</label>
                             <div style="display:flex; gap:10px;">
-                                <input type="number" id="player-mora-input" value="1000000" min="1" style="flex:1;">
+                                <input type="text" id="player-mora-input" value="1000000" min="1" style="flex:1;">
                                 <button class="action-btn" onclick="addMora()">Выдать</button>
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Переплетающиеся судьбы:</label>
                             <div style="display:flex; gap:10px;">
-                                <input type="number" id="player-fate-input" value="100" min="1" style="flex:1;">
+                                <input type="text" id="player-fate-input" value="100" min="1" style="flex:1;">
                                 <button class="action-btn" onclick="addFate()">Выдать</button>
                             </div>
                         </div>
                         <div class="form-group">
                             <label>Судьбоносные встречи:</label>
                             <div style="display:flex; gap:10px;">
-                                <input type="number" id="player-acquaint-input" value="100" min="1" style="flex:1;">
+                                <input type="text" id="player-acquaint-input" value="100" min="1" style="flex:1;">
                                 <button class="action-btn" onclick="addAcquaint()">Выдать</button>
                             </div>
                         </div>
@@ -205,7 +205,7 @@
                         <div class="form-group">
                             <label>Количество:</label>
                             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                                <input type="number" id="items-count" value="1" min="1" style="flex:1; min-width:120px;">
+                                <input type="text" id="items-count" value="1" min="1" style="flex:1; min-width:120px;">
                                 <button class="action-btn secondary" onclick="setItemCount(1)" style="padding:6px 12px;">1</button>
                                 <button class="action-btn secondary" onclick="setItemCount(10)" style="padding:6px 12px;">10</button>
                                 <button class="action-btn secondary" onclick="setItemCount(50)" style="padding:6px 12px;">50</button>
@@ -423,11 +423,11 @@
                 </div>
                 <div class="form-group">
                     <label>Уровень оружия (1-90):</label>
-                    <input type="number" id="weapon-level" value="90" min="1" max="90">
+                    <input type="text" id="weapon-level" value="90" min="1" max="90">
                 </div>
                 <div class="form-group">
                     <label>Пробуждение:</label>
-                    <input type="number" id="weapon-promote" value="1">
+                    <input type="text" id="weapon-promote" value="1">
                 </div>
                 <button class="action-btn" onclick="sendWeapon()" style="width:100%; padding:15px;"> <i class="icon-swords"></i> Выдать оружие</button>
             </div>
@@ -526,23 +526,23 @@
                 </div>
                 <div class="form-group">
                     <label>Важность:</label>
-                    <input type="number" id="mail-importance" value="0" min="0">
+                    <input type="text" id="mail-importance" value="0" min="0">
                 </div>
                 <div class="form-group" style="display: none;">
                     <label>config_id (обычно 0):</label>
-                    <input type="number" id="mail-config-id" value="0">
+                    <input type="text" id="mail-config-id" value="0">
                 </div>
                 <div class="form-group" style="display: none;">
                     <label>item_limit_type (обычно 0):</label>
-                    <input type="number" id="mail-item-limit-type" value="0">
+                    <input type="text" id="mail-item-limit-type" value="0">
                 </div>
                 <div class="form-group" style="display: none;">
                     <label>tag (обычно 0):</label>
-                    <input type="number" id="mail-tag" value="0">
+                    <input type="text" id="mail-tag" value="0">
                 </div>
                 <div class="form-group" style="display: none;">
                     <label>source_type (обычно 0):</label>
-                    <input type="number" id="mail-source-type" value="0">
+                    <input type="text" id="mail-source-type" value="0">
                 </div>
                 
                 <div class="card" style="background: #161616; margin-top: 15px;">
@@ -556,7 +556,7 @@
                     </div>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <label style="white-space: nowrap;">Количество:</label>
-                        <input type="number" id="mail-item-count" value="1" min="1" style="width: 80px;">
+                        <input type="text" id="mail-item-count" value="1" min="1" style="width: 80px;">
                         <button class="action-btn" onclick="addMailItem()"><i class="icon-plus"></i> Добавить вложение</button>
                         <button class="action-btn danger" onclick="clearMailItems()"><i class="icon-trash"></i> Очистить всё</button>
                     </div>
@@ -585,11 +585,11 @@
                 </div>
                 <div class="form-group">
                     <label>Количество:</label>
-                    <input type="number" id="monster-count-input" value="1" min="1" style="width: 120px;">
+                    <input type="text" id="monster-count-input" value="1" min="1" style="width: 120px;">
                 </div>
                 <div class="form-group">
                     <label>Уровень (необязательно, 0 = стандартный):</label>
-                    <input type="number" id="monster-level-input" value="0" min="0" style="width: 120px;">
+                    <input type="text" id="monster-level-input" value="0" min="0" style="width: 120px;">
                 </div>
                 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0 15px 0;">
