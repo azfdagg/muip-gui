@@ -200,10 +200,21 @@
             updateNotifBadge();
         }
 
+            // ============================================
+        // ФУНКЦИЯ ОБНОВЛЕНИЯ БЕЙДЖА
+        // ============================================
+
         function updateNotifBadge() {
             const container = document.getElementById('notification-container');
-            const count = container.children.length;
             const badge = document.getElementById('notifBadge');
+            
+            // Если бейджа нет в DOM, просто выходим
+            if (!badge) {
+                return;
+            }
+            
+            // Считаем количество уведомлений
+            const count = container ? container.children.length : 0;
             
             if (count > 0) {
                 badge.style.display = 'flex';
