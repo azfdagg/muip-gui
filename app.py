@@ -11,6 +11,8 @@ import urllib.parse
 import time
 from flask import Flask, render_template, request, jsonify
 
+
+
 app = Flask(__name__)
 
 CONFIG_PATH = 'data/config.json'
@@ -54,31 +56,62 @@ def save_data(data):
         print(f"Ошибка записи в data.json: {e}")
 
 def parse_handbook():
-    """Парсинг справочника ID предметов и персонажей из текстовых файлов."""
+    """Парсинг справочника из отдельных файлов в папке data/handbook."""
     items = []
-    files = glob.glob("data/*Handbook*.txt") + glob.glob("data/*.txt")
+    handbook_dir = "data/handbook"
+    
+    # Определяем файлы для парсинга
+    files_to_parse = {
+        "Avatars.txt": "avatar",
+        "Items.txt": "item",
+        "Monsters.txt": "monster",
+        "Quests.txt": "quest",
+        "Scenes.txt": "scene",
+        "Gadgets.txt": "gadget",
+        "Drop.txt" : "drop"
+    }
+    
     seen = set()
     
-    for f_path in files:
-        if "muip_commands" in f_path or "КОМАНДЫ" in f_path:
+    for filename, category in files_to_parse.items():
+        file_path = os.path.join(handbook_dir, filename)
+        
+        if not os.path.exists(file_path):
+            print(f"Предупреждение: Файл {file_path} не найден. Пропускаем.")
             continue
+            
         try:
-            with open(f_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
                     line = line.strip()
+                    # Пропускаем пустые строки и комментарии
+                    if not line or line.startswith('#'):
+                        continue
+                        
+                    # Ищем строки формата "ID : Name"
                     match = re.match(r'^(\d+)\s*:\s*(.*)', line)
                     if match:
                         item_id = match.group(1)
                         name = match.group(2).strip()
+                        
+                        # Проверяем, что такой пары еще не было
                         if (item_id, name) not in seen:
                             seen.add((item_id, name))
-                            items.append({"id": item_id, "name": name})
+                            items.append({
+                                "id": item_id, 
+                                "name": name,
+                                "category": category  # Добавляем категорию для удобства
+                            })
         except Exception as e:
-            print(f"Ошибка парсинга файла справочника {f_path}: {e}")
+            print(f"Ошибка парсинга файла {file_path}: {e}")
     
     if not items:
-        print("Предупреждение: Не найдено ни одного файла справочника. Справочник пуст.")
+        print("Предупреждение: Не найдено ни одного файла в data/handbook. Справочник пуст.")
     
+    # Сортируем по ID для удобства
+    items.sort(key=lambda x: int(x['id']) if x['id'].isdigit() else 0)
+    
+    print(f"Загружено {len(items)} записей из справочника")
     return items
 
 def parse_muip_commands():

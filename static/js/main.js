@@ -51,7 +51,7 @@
                     const data = await res.json();
                     muipSchema = data.muip || {};
                     fullHandbookList = data.handbook || [];
-            filteredMailHandbook = fullHandbookList;
+                    filteredMailHandbook = fullHandbookList;
                     
                     const select = document.getElementById('muip-cmd-select');
                     select.innerHTML = '<option value="">-- Выберите команду --</option>';
@@ -64,6 +64,7 @@
                     });
 
                     renderHandbookTable(fullHandbookList.slice(0, 100));
+                    initMailTab();
                 } catch (e) {
                     logToTerminal("Ошибка разбора схемы метаданных: " + e, "err");
                 }
@@ -440,7 +441,6 @@
 
         function initArtifactTab() {
             // Устанавливаем значения по умолчанию
-            document.getElementById('artifact-uid').value = document.getElementById('global-uid').value || '1';
             document.getElementById('artifact-id').value = '';
             document.getElementById('artifact-level').value = '21';
             document.getElementById('artifact-main-prop').value = '';
@@ -602,7 +602,7 @@
         }
 
         function sendArtifact() {
-            const uid = document.getElementById('artifact-uid').value.trim() || '1';
+            const uid = document.getElementById('global-uid').value.trim() || '1';
             const itemId = document.getElementById('artifact-id').value.trim();
             const level = parseInt(document.getElementById('artifact-level').value) || 21;
             const mainPropId = parseInt(document.getElementById('artifact-main-prop').value.trim()) || 0;
@@ -645,11 +645,6 @@
                 extra_params: JSON.stringify(extraParams)
             };
 
-            logToTerminal(`⚔️ Выдача артефакта: ${itemId} для UID ${uid}`, 'info');
-            logToTerminal(`📊 Уровень: ${level}, Основная стат: ${mainPropId}`, 'info');
-            logToTerminal(`📊 Второстепенные: ${appendPropIdList.join(', ') || 'нет'}`, 'info');
-            logToTerminal(`📋 Параметры: ${JSON.stringify(params, null, 2)}`, 'info');
-
             sendMuipRequest('1127', params);
         }
 
@@ -658,7 +653,6 @@
         // ФУНКЦИИ ДЛЯ ОТПРАВКИ ПОЧТЫ (MAIL)
         // ============================================
         let mailItems = {}; // { "item_id": count }
-        let filteredMailHandbook = [];
 
         function initMailTab() {
             // Устанавливаем текущее время для expire
@@ -666,7 +660,6 @@
             setInterval(updateMailCurrentTime, 10000);
             
             // Заполняем handbook для поиска предметов
-            filteredMailHandbook = fullHandbookList;
         }
 
         function updateMailCurrentTime() {
@@ -803,9 +796,6 @@
                 item_list: item_list
             };
 
-            logToTerminal(`📧 Отправка письма: "${title}" для UID ${uid}`, 'info');
-            logToTerminal(`📦 Вложения: ${item_list || 'нет'}`, 'info');
-
             // Выполняем MUIP команду 1005 с параметрами
             sendMuipRequest('1005', params);
 
@@ -813,14 +803,6 @@
             document.getElementById('selected-mail-item-id').textContent = '--';
             document.getElementById('selected-mail-item-name').textContent = '--';
         }
-
-        // Инициализация при загрузке
-        // Добавляем вызов initMailTab() в функцию loadSchema() после загрузки handbook
-        const originalInit = loadSchema;
-        loadSchema = async function() {
-            await originalInit();
-            initMailTab();
-        };
 
         // ============================================
         // ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ МОНСТРАМИ
@@ -838,7 +820,6 @@
             
             // Формируем команду: monster <id> <count> <level>
             const cmd = `monster ${monsterId} ${count} ${level}`;
-            logToTerminal(`🐉 Спавн монстра: ID=${monsterId}, Кол-во=${count}, Уровень=${level}`, 'info');
             quickGm(cmd);
         }
 
@@ -849,13 +830,11 @@
                 return;
             }
             const cmd = `kill monster ${monsterId}`;
-            logToTerminal(`💀 Убить монстра: ID=${monsterId}`, 'info');
             quickGm(cmd);
         }
 
         function killAllMonsters() {
             const cmd = `kill monster all`;
-            logToTerminal(`☠️ Убить ВСЕХ монстров в сцене!`, 'err');
             quickGm(cmd);
         }
 
@@ -868,13 +847,11 @@
                 return;
             }
 
-            // Фильтруем только монстров (их ID обычно начинаются с 2 или 3, но ищем все по ключевым словам)
-            const results = fullHandbookList.filter(item => {
-                const id = item.id.toString();
-                const name = item.name.toLowerCase();
-                return (id.startsWith('2') || id.startsWith('3') || name.includes('монстр') || name.includes('slime') || name.includes('хиличурл') || name.includes('митачурл') || name.includes('ла') || name.includes('Фатуи')) &&
-                    (id.includes(query) || name.includes(query));
-            }).slice(0, 40);
+            // Используем category из данных
+            const results = fullHandbookList.filter(item => 
+                item.category === 'monster' &&
+                (item.id.toString().includes(query) || item.name.toLowerCase().includes(query))
+            ).slice(0, 40);
 
             if (results.length === 0) {
                 container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Монстров не найдено</div>';
@@ -900,11 +877,11 @@
         // ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ГАДЖЕТАМИ
         // ============================================
 
-        let gadgetCache = [];
 
         function spawnGadget() {
             const gadgetId = document.getElementById('gadget-id-input').value.trim();
             const count = document.getElementById('gadget-count-input').value.trim() || '1';
+            const dropId = document.getElementById('gadget-drop-id').value.trim();
             const args = document.getElementById('gadget-args-input').value.trim();
             
             if (!gadgetId) {
@@ -912,14 +889,19 @@
                 return;
             }
             
+            // Формируем команду: gadget [id] [count] [drop_id] [args]
             let cmd = `gadget ${gadgetId} ${count}`;
+            
+            if (dropId) {
+                cmd += ` ${dropId}`;
+            }
+            
             if (args) {
                 cmd += ` ${args}`;
             }
-            logToTerminal(`🔧 Спавн гаджета: ${cmd}`, 'info');
+            
             quickGm(cmd);
         }
-
         function filterGadgetHandbook() {
             const query = document.getElementById('gadget-search-input').value.toLowerCase().trim();
             const container = document.getElementById('gadget-search-results');
@@ -929,27 +911,9 @@
                 return;
             }
 
-            // Кэшируем гаджеты по ID
-            if (gadgetCache.length === 0) {
-                gadgetCache = fullHandbookList.filter(item => {
-                    const id = parseInt(item.id);
-                    
-                    // Диапазоны ID гаджетов
-                    const isGadget = (id >= 40000001 && id <= 90000007) || 
-                                    (id >= 420000001 && id <= 707111183);
-                    
-                    return isGadget;
-                });
-                
-                console.log('Найдено гаджетов по ID:', gadgetCache.length);
-                if (gadgetCache.length > 0) {
-                    console.log('Примеры гаджетов:', gadgetCache.slice(0, 5).map(i => `${i.id}: ${i.name}`));
-                }
-            }
-
-            const results = gadgetCache.filter(item => 
-                String(item.id).includes(query) || 
-                item.name.toLowerCase().includes(query)
+            const results = fullHandbookList.filter(item => 
+                item.category === 'gadget' &&
+                (item.id.toString().includes(query) || item.name.toLowerCase().includes(query))
             ).slice(0, 30);
 
             if (results.length === 0) {
@@ -965,6 +929,45 @@
                     <span style="color: #666; font-size: 12px;">🔧</span>
                 </div>
             `).join('');
+        }
+                // ============================================
+        // ПОИСК ТАБЛИЦ ВЫПАДЕНИЯ ДЛЯ ГАДЖЕТОВ
+        // ============================================
+
+        function filterDropForGadgets() {
+            const query = document.getElementById('gadget-drop-search').value.toLowerCase().trim();
+            const container = document.getElementById('gadget-drop-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска таблиц...</div>';
+                return;
+            }
+
+            // Ищем в fullHandbookList по категории 'drop'
+            const results = fullHandbookList.filter(item => 
+                item.category === 'drop' &&
+                (String(item.id).includes(query) || item.name.toLowerCase().includes(query))
+            ).slice(0, 30);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Таблиц выпадения не найдено</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                    onclick="selectDropForGadget('${item.id}')"
+                    onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">📊</span>
+                </div>
+            `).join('');
+        }
+
+        function selectDropForGadget(itemId) {
+            document.getElementById('gadget-drop-id').value = itemId;
+            document.getElementById('gadget-drop-search').value = '';
+            document.getElementById('gadget-drop-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Таблица выбрана, ID подставлен в поле drop_id</div>';
         }
 
         function selectGadget(id) {
@@ -1045,11 +1048,9 @@
             const x = document.getElementById('teleport-x').value.trim() || '0';
             const y = document.getElementById('teleport-y').value.trim() || '0';
             const z = document.getElementById('teleport-z').value.trim() || '0';
-            
-            let cmd = `goto ${x} ${y} ${z}`;
+            quickGm(`goto ${x} ${y} ${z}`);
         }
 
-        let weaponCache = [];
 
         // Filter weapons from handbook (IDs 11101-15509)
         function filterWeaponItems() {
@@ -1061,17 +1062,10 @@
                 return;
             }
 
-            // Cache weapons on first search
-            if (weaponCache.length === 0) {
-                weaponCache = fullHandbookList.filter(item => {
-                    const id = parseInt(item.id);
-                    return id >= 11101 && id <= 15509;
-                });
-            }
-
-            const results = weaponCache.filter(item => 
-                item.id.toString().includes(query) || 
-                item.name.toLowerCase().includes(query)
+            const results = fullHandbookList.filter(item => 
+                item.category === 'item' &&
+                parseInt(item.id) >= 11101 && parseInt(item.id) <= 15509 &&
+                (item.id.toString().includes(query) || item.name.toLowerCase().includes(query))
             ).slice(0, 50);
 
             if (results.length === 0) {
@@ -1096,7 +1090,7 @@
         }
 
         function sendWeapon() {
-            const uid = document.getElementById('weapon-uid').value.trim() || '1';
+            const uid = document.getElementById('global-uid').value.trim() || '1';
             const itemId = document.getElementById('weapon-id').value.trim();
             const level = parseInt(document.getElementById('weapon-level').value) || 90;
             const promote = parseInt(document.getElementById('weapon-promote').value) || 5;
@@ -1106,18 +1100,9 @@
                 return;
             }
 
-            logToTerminal(`⚔️ Выдача оружия: ${itemId} для UID ${uid}`, 'info');
-            logToTerminal(`📊 Уровень: ${level}, Пробуждение: ${promote}`, 'info');
-
-            // Using equip add command format: equip add <item_id> <level> <promote>
             const cmd = `equip add ${itemId} ${level} ${promote}`;
             quickGm(cmd);
         }
-
-        let characterCache = [];
-        let questsCache = [];
-
-
 
 
         function filterQuestsItems() {
@@ -1129,17 +1114,9 @@
                 return;
             }
 
-            // Cache quests on first search
-            if (questsCache.length === 0) {
-                questsCache = fullHandbookList.filter(item => {
-                    const id = parseInt(item.id);
-                    return id >= 30302 && id <= 9000101;
-                });
-            }
-
-            const results = questsCache.filter(item => 
-                item.id.toString().includes(query) || 
-                item.name.toLowerCase().includes(query)
+            const results = fullHandbookList.filter(item => 
+                item.category === 'quest' &&
+                (item.id.toString().includes(query) || item.name.toLowerCase().includes(query))
             ).slice(0, 50);
 
             if (results.length === 0) {
@@ -1179,17 +1156,9 @@
                 return;
             }
 
-            // Cache characters on first search
-            if (characterCache.length === 0) {
-                characterCache = fullHandbookList.filter(item => {
-                    const id = parseInt(item.id);
-                    return id >= 10000001 && id <= 11000042;
-                });
-            }
-
-            const results = characterCache.filter(item => 
-                item.id.toString().includes(query) || 
-                item.name.toLowerCase().includes(query)
+            const results = fullHandbookList.filter(item => 
+                item.category === 'avatar' &&
+                (item.id.toString().includes(query) || item.name.toLowerCase().includes(query))
             ).slice(0, 50);
 
             if (results.length === 0) {
@@ -1214,7 +1183,7 @@
         }
 
         function addCharacter() {
-            const uid = document.getElementById('char-uid').value.trim() || '1';
+            const uid = document.getElementById('global-uid').value.trim() || '1';
             const charId = document.getElementById('char-id').value.trim();
             
             if (!charId) {
@@ -1222,12 +1191,11 @@
                 return;
             }
 
-            logToTerminal(`👤 Добавление персонажа: ${charId} для UID ${uid}`, 'info');
             quickGm(`avatar add ${charId}`);
         }
 
         function changeCharacter() {
-            const uid = document.getElementById('char-uid').value.trim() || '1';
+            const uid = document.getElementById('global-uid').value.trim() || '1';
             const charId = document.getElementById('char-id').value.trim();
             
             if (!charId) {
@@ -1235,7 +1203,6 @@
                 return;
             }
 
-            logToTerminal(`🔄 Смена персонажа на: ${charId} для UID ${uid}`, 'info');
             quickGm(`avatar change ${charId}`);
         }
 
@@ -1292,7 +1259,7 @@
         }
 
         function sendItems() {
-            const uid = document.getElementById('items-uid').value.trim() || '1';
+            const uid = document.getElementById('global-uid').value.trim() || '1';
             const itemId = document.getElementById('items-id').value.trim();
             const count = parseInt(document.getElementById('items-count').value) || 1;
             
@@ -1308,15 +1275,15 @@
             if (idNum >= 10000001 && idNum <= 11000042) {
                 // Персонажи
                 cmd = `avatar add ${itemId}`;
-                logToTerminal(`👤 Выдача персонажа: ${itemId} для UID ${uid}`, 'info');
+
             } else if (idNum >= 11101 && idNum <= 15509) {
                 // Оружие (используем equip add с уровнем и пробуждением по умолчанию)
                 cmd = `equip add ${itemId} 90 5`;
-                logToTerminal(`⚔️ Выдача оружия: ${itemId} для UID ${uid} (ур.90, проб.5)`, 'info');
+
             } else {
                 // Обычные предметы
                 cmd = `item add ${itemId} ${count}`;
-                logToTerminal(`📦 Выдача предметов: ${itemId} x${count} для UID ${uid}`, 'info');
+
             }
             
             quickGm(cmd);
@@ -1401,8 +1368,6 @@
                 logToTerminal('❌ Глобальный UID не задан', 'err');
                 return;
             }
-
-            logToTerminal(`📍 Запрос позиции для UID ${uid}...`, 'info');
             
             try {
                 const response = await fetch('/api/execute_muip', {
@@ -1461,7 +1426,6 @@
                         document.getElementById('teleport-current-coords').textContent = 
                             ` Сцена: ${sceneId} | X: ${x} | Y: ${y} | Z: ${z}`;
                         
-                        logToTerminal(`✅ Позиция получена: Сцена ${sceneId} (${x}, ${y}, ${z})`, 'success');
                     } else {
                         logToTerminal('⚠️ Не удалось распарсить координаты из: ' + dataStr, 'warning');
                     }

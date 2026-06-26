@@ -459,31 +459,6 @@
             border-color: #00439c;
         }
 
-        .custom-caret {
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%) scaleY(3.5);
-            width: 2px;
-            height: 20px;
-            background: #007aff;
-            border-radius: 2px;
-            pointer-events: none;
-            display: none;
-            z-index: 2;
-            box-shadow: 0 0 6px rgba(0, 122, 255, 0.2);
-            transform-origin: center center;
-            transition: left 0.08s cubic-bezier(0.22, 1, 0.36, 1),
-                        transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        opacity 0.3s ease;
-                        /* ... существующие стили ... */
-            animation: appleCaretBlink 1s step-end infinite;
-        }
-
-        @keyframes appleCaretBlink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.1; }  /* Не полное исчезновение, а плавное затухание */
-        }
 
         .custom-caret.blinking {
             animation: appleCaretBlink 1.2s cubic-bezier(0.75, 0, 1, 0.5) infinite;

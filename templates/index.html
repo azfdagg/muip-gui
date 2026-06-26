@@ -63,10 +63,6 @@
             <div class="card">
                 <h4> <i class="icon-swords"></i> Параметры артефакта (Важно! Артефакты на старых версиях не выдаются с кастомным уровнем и характеристиками!)</h4>
                 <div class="form-group">
-                    <label>UID получателя:</label>
-                    <input type="text" id="artifact-uid" value="1">
-                </div>
-                <div class="form-group">
                     <label>ID артефакта (из справочника):</label>
                     <input type="text" id="artifact-id" placeholder="76544">
                 </div>
@@ -196,10 +192,6 @@
                     <div class="card">
                         <h4><i class="icon-package"></i> Выдача предметов</h4>
                         <div class="form-group">
-                            <label>UID получателя:</label>
-                            <input type="text" id="items-uid" value="1">
-                        </div>
-                        <div class="form-group">
                             <label>ID предмета (из справочника):</label>
                             <input type="text" id="items-id" placeholder="201">
                         </div>
@@ -251,10 +243,6 @@
                 <div>
                     <div class="card">
                         <h4><i class="icon-notebook-tabs"></i> Управление квестами</h4>
-                        <div class="form-group">
-                            <label>UID игрока:</label>
-                            <input type="text" id="quest-uid" value="1">
-                        </div>
                         <div class="form-group">
                             <label>ID квеста:</label>
                             <div style="display:flex; gap:10px; align-items:center;">
@@ -385,7 +373,10 @@
                             <label>Z:</label>
                             <input type="text" id="teleport-z" value="0">
                         </div>
-                        <button class="action-btn" onclick="teleportToCoords()" style="width:100%;"><i class="icon-pin"></i> Телепорт по координатам</button>
+                        <button class="action-btn" onclick="teleportToCoords()" style="width:100%;">
+                            <i class="icon-pin"></i> Телепорт по координатам
+                        </button>
+
                         <div style="font-size:12px; color:#888; margin-top:8px;">
                         </div>
                     </div>
@@ -414,10 +405,6 @@
         <div id="tab-weapons" class="content-area">
             <div class="card">
                 <h4> <i class="icon-swords"></i> Выдача оружия</h4>
-                <div class="form-group">
-                    <label>UID получателя:</label>
-                    <input type="text" id="weapon-uid" value="1">
-                </div>
                 <div class="form-group">
                     <label>ID оружия (из справочника):</label>
                     <input type="text" id="weapon-id" placeholder="13501">
@@ -452,10 +439,6 @@
                 <div id="tab-characters" class="content-area">
             <div class="card">
                 <h4><i class="icon-users-round"></i> Управление персонажами</h4>
-                <div class="form-group">
-                    <label>UID получателя:</label>
-                    <input type="text" id="char-uid" value="1">
-                </div>
                 <div class="form-group">
                     <label>ID персонажа:</label>
                     <input type="text" id="char-id" placeholder="10000002">
@@ -496,10 +479,6 @@
         <div id="tab-mail" class="content-area">
             <div class="card">
                 <h4><i class="icon-mail"></i> Отправить почту (MUIP 1005)</h4>
-                <div class="form-group">
-                    <label>UID получателя:</label>
-                    <input type="text" id="mail-uid" value="1">
-                </div>
                 <div class="form-group">
                     <label>Заголовок письма:</label>
                     <input type="text" id="mail-title" placeholder="Введите заголовок">
@@ -625,16 +604,33 @@
                             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                 <input type="text" id="gadget-id-input" placeholder="ID" style="flex: 1; min-width: 100px;">
                                 <input type="text" id="gadget-count-input" placeholder="Кол-во" value="1" style="width: 80px;">
-                                <input type="text" id="gadget-args-input" placeholder="Доп. теги" style="flex: 1; min-width: 150px;">
                             </div>
-                            <div style="font-size: 12px; color: #888; margin-top: 4px;">
-                                <i class="icon-lightbulb"></i> Пример: <code>40000001 1</code>
+                        </div>
+                        
+                        <!-- НОВОЕ ПОЛЕ ДЛЯ DROP_ID -->
+                        <div class="form-group">
+                            <label>ID таблицы выпадения (drop_id, опционально):</label>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <input type="text" id="gadget-drop-id" placeholder="Например: 1001" style="flex: 1; min-width: 150px;">
+                                <span style="color: #666; font-size: 12px;">(необязательно)</span>
                             </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Доп. аргументы (опционально):</label>
+                            <input type="text" id="gadget-args-input" placeholder="Доп. теги" style="width: 100%;">
                         </div>
                         
                         <button class="action-btn" onclick="spawnGadget()" style="width: 100%; padding: 12px;">
                             <i class="icon-plus"></i> Спавн гаджет
                         </button>
+                        
+                        <div style="font-size: 12px; color: #888; margin-top: 8px;">
+                            <i class="icon-lightbulb"></i> Форматы:<br>
+                            • <code>gadget [id] [count]</code><br>
+                            • <code>gadget [id] [count] [drop_id]</code><br>
+                            • <code>gadget [id] [count] [drop_id] [args]</code>
+                        </div>
                     </div>
                 </div>
 
@@ -651,6 +647,21 @@
                         </div>
                         <div style="font-size: 12px; color: #888; margin-top: 5px;">
                             <i class="icon-lightbulb"></i> Нажмите на гаджет, чтобы подставить его ID.
+                        </div>
+                    </div>
+                    
+                    <!-- НОВЫЙ БЛОК: Поиск таблиц выпадения -->
+                    <div class="card" style="background: #161616; margin-top: 15px;">
+                        <h4><i class="icon-table"></i> Поиск таблиц выпадения (drop_id)</h4>
+                        <div class="form-group">
+                            <label>Поиск по ID или названию:</label>
+                            <input type="text" id="gadget-drop-search" placeholder="Введите ID или название таблицы..." oninput="filterDropForGadgets()">
+                        </div>
+                        <div id="gadget-drop-results" style="max-height: 200px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px;">
+                            <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска таблиц...</div>
+                        </div>
+                        <div style="font-size:12px; color:#888; margin-top:5px;">
+                            <i class="icon-lightbulb"></i> Нажмите на таблицу, чтобы подставить её ID в поле <code>drop_id</code>.
                         </div>
                     </div>
                 </div>
