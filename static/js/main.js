@@ -93,6 +93,7 @@
                 'tab-characters': ' Персонажи (MUIP 1116)',
                 'tab-quests': ' Квесты (MUIP 1116)',
                 'tab-items': ' Предметы (MUIP 1116)',
+                'tab-gadgets': ' Спавн гаджетов',
                 
             };
             document.getElementById('current-title').textContent = titleMap[tabId] || tabId;
@@ -895,6 +896,92 @@
             document.getElementById('monster-search-input').value = '';
             document.getElementById('monster-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Монстр выбран, ID подставлен в поле выше</div>';
         }
+        // ============================================
+        // ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ГАДЖЕТАМИ
+        // ============================================
+
+        let gadgetCache = [];
+
+        function spawnGadget() {
+            const gadgetId = document.getElementById('gadget-id-input').value.trim();
+            const count = document.getElementById('gadget-count-input').value.trim() || '1';
+            const args = document.getElementById('gadget-args-input').value.trim();
+            
+            if (!gadgetId) {
+                alert('Введите ID гаджета.');
+                return;
+            }
+            
+            let cmd = `gadget ${gadgetId} ${count}`;
+            if (args) {
+                cmd += ` ${args}`;
+            }
+            logToTerminal(`🔧 Спавн гаджета: ${cmd}`, 'info');
+            quickGm(cmd);
+        }
+
+        function filterGadgetHandbook() {
+            const query = document.getElementById('gadget-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('gadget-search-results');
+            
+            if (!query) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска гаджетов...</div>';
+                return;
+            }
+
+            // Кэшируем гаджеты по ID
+            if (gadgetCache.length === 0) {
+                gadgetCache = fullHandbookList.filter(item => {
+                    const id = parseInt(item.id);
+                    
+                    // Диапазоны ID гаджетов
+                    const isGadget = (id >= 40000001 && id <= 90000007) || 
+                                    (id >= 420000001 && id <= 707111183);
+                    
+                    return isGadget;
+                });
+                
+                console.log('Найдено гаджетов по ID:', gadgetCache.length);
+                if (gadgetCache.length > 0) {
+                    console.log('Примеры гаджетов:', gadgetCache.slice(0, 5).map(i => `${i.id}: ${i.name}`));
+                }
+            }
+
+            const results = gadgetCache.filter(item => 
+                String(item.id).includes(query) || 
+                item.name.toLowerCase().includes(query)
+            ).slice(0, 30);
+
+            if (results.length === 0) {
+                container.innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Гаджетов не найдено</div>';
+                return;
+            }
+
+            container.innerHTML = results.map(item => `
+                <div style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; justify-content: space-between; align-items: center;"
+                    onclick="selectGadget('${item.id}')"
+                    onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">
+                    <span><strong style="color: #00bfff;">${item.id}</strong> — ${item.name}</span>
+                    <span style="color: #666; font-size: 12px;">🔧</span>
+                </div>
+            `).join('');
+        }
+
+        function selectGadget(id) {
+            document.getElementById('gadget-id-input').value = id;
+            // Список результатов остается видимым
+            // Подсвечиваем выбранный элемент
+            const container = document.getElementById('gadget-search-results');
+            const items = container.querySelectorAll('div');
+            items.forEach(item => {
+                item.style.background = 'transparent';
+                item.style.borderLeft = 'none';
+                if (item.textContent.includes(id)) {
+                    item.style.background = '#1a3a6a';
+                    item.style.borderLeft = '3px solid #00439c';
+                }
+            });
+        }
         // Player Level
         function setPlayerLevel() {
             const level = document.getElementById('player-level-input').value;
@@ -1287,7 +1374,8 @@
                 'tab-muip': 'MUIP',
                 'tab-handbook': 'Справочник',
                 'tab-settings': 'Настройки',
-                'tab-items': 'Предметы'
+                'tab-items': 'Предметы',
+                'tab-gadgets': 'Гаджеты',   
             };
             
             buttons.forEach(btn => {
@@ -1638,13 +1726,13 @@
             loadQuestPackages();
         });
         // ============================================
-        //  КАРЕТКА — ОПТИМИЗИРОВАННАЯ ВЕРСИЯ
+        //  КАРЕТКА — Apple-стиль с плавным миганием
         // ============================================
 
         (function() {
             
-            // === ШАГ 1: Преобразуем все поля ввода ===
-            document.querySelectorAll('input, textarea').forEach(el => {
+            // === ШАГ 1: Преобразуем только поля ввода (исключаем чекбоксы и радио) ===
+            document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]), textarea').forEach(el => {
                 if (el.closest('.input-container')) return;
                 
                 const wrapper = document.createElement('div');
@@ -1680,8 +1768,19 @@
 
             const inputs = document.querySelectorAll('.smooth-input');
 
-
-
+            // Добавляем CSS-анимацию для плавного мигания
+            const styleSheet = document.createElement('style');
+            styleSheet.textContent = `
+                @keyframes appleCaretBlink {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.3; }
+                }
+                
+                .custom-caret.blinking {
+                    animation: appleCaretBlink 1.5s cubic-bezier(0.5, 0, 1, 0.5) infinite;
+                }
+            `;
+            document.head.appendChild(styleSheet);
 
             // === ШАГ 2: Настройка измерения текста ===
             const canvas = document.createElement('canvas');
@@ -1704,8 +1803,7 @@
                     const paddingLeft = parseFloat(style.paddingLeft) || 10;
                     const paddingTop = parseFloat(style.paddingTop) || 10;
                     
-                    // Получаем текст до позиции курсора (работает для всех полей)
-                    const selStart = input.selectionStart || input.value.length || 0;
+                    const selStart = input.selectionStart || 0;
                     const textBeforeCaret = input.value.substring(0, selStart);
                     
                     ctx.font = font;
@@ -1752,12 +1850,19 @@
             }
 
             function forceUpdate(input) {
-                requestAnimationFrame(() => updateCaret(input));
+                if (input._rafId) {
+                    cancelAnimationFrame(input._rafId);
+                }
+                input._rafId = requestAnimationFrame(() => {
+                    updateCaret(input);
+                    input._rafId = null;
+                });
             }
 
-            // === ШАГ 4: Анимация появления ===
+            // === ШАГ 4: Анимация появления с плавным миганием ===
             let lastInput = null;
             let animationTimeout = null;
+            let blinkTimeout = null;
 
             function animateCaret(input) {
                 if (!input || lastInput === input) return;
@@ -1769,29 +1874,38 @@
                 
                 lastInput = input;
                 if (animationTimeout) clearTimeout(animationTimeout);
+                if (blinkTimeout) clearTimeout(blinkTimeout);
                 
-                // Показываем каретку — прозрачная и большая
+                // Показываем каретку и убираем мигание на момент появления
                 caret.style.display = 'block';
+                caret.classList.remove('blinking');
                 caret.style.transition = 'none';
                 caret.style.transform = input.tagName === 'TEXTAREA' ? 'scaleY(5)' : 'translateY(-50%) scaleY(5)';
                 caret.style.opacity = '0';
-                
+
                 void caret.offsetHeight;
-                
-                // Запускаем анимацию
+
+                // Запускаем анимацию появления
                 requestAnimationFrame(() => {
-                    caret.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease';
+                    // Добавляем transition для плавного появления opacity
+                    caret.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                     if (input.tagName === 'TEXTAREA') {
                         caret.style.transform = 'scaleY(1)';
                     } else {
                         caret.style.transform = 'translateY(-50%) scaleY(1)';
                     }
+                    // Плавно увеличиваем opacity до 1
                     caret.style.opacity = '1';
                 });
                 
+                // Включаем плавное мигание через 400ms после появления
+                blinkTimeout = setTimeout(() => {
+                    caret.classList.add('blinking');
+                }, 400);
+                
                 animationTimeout = setTimeout(() => {
                     lastInput = null;
-                }, 400);
+                }, 500);
             }
 
             // === ШАГ 5: Настройка событий для всех полей ===
@@ -1825,9 +1939,9 @@
                     }
                 });
 
-                // === ВЫДЕЛЕНИЕ ТЕКСТА (перетягивание мышью) — ДЛЯ ВСЕХ ПОЛЕЙ ===
+                // === ВЫДЕЛЕНИЕ ТЕКСТА ===
                 input.addEventListener('select', function() {
-                    forceUpdate(this);
+                    setTimeout(() => forceUpdate(this), 10);
                 });
 
                 // === ОТСЛЕЖИВАНИЕ МЫШИ ПРИ ВЫДЕЛЕНИИ ===
@@ -1840,11 +1954,11 @@
                 // === ОТПУСКАНИЕ МЫШИ ПОСЛЕ ВЫДЕЛЕНИЯ ===
                 input.addEventListener('mouseup', function() {
                     if (document.activeElement === this) {
-                        forceUpdate(this);
+                        setTimeout(() => forceUpdate(this), 10);
                     }
                 });
 
-                // Потеря фокуса
+                // Потеря фокуса — скрываем каретку и отключаем мигание
                 input.addEventListener('blur', function() {
                     const container = this.closest('.input-container');
                     if (container) {
@@ -1852,6 +1966,7 @@
                         if (caret) {
                             caret.style.display = 'none';
                             caret.style.opacity = '0';
+                            caret.classList.remove('blinking');
                         }
                     }
                     if (smoothPositions.has(this)) {
@@ -1873,15 +1988,13 @@
             });
 
             // === ШАГ 6: Глобальные обработчики ===
-            // Отслеживаем изменение выделения (для всех полей)
             document.addEventListener('selectionchange', function() {
                 const active = document.activeElement;
                 if (active && active.classList && active.classList.contains('smooth-input')) {
-                    forceUpdate(active);
+                    requestAnimationFrame(() => forceUpdate(active));
                 }
             });
 
-            // Изменение размера окна
             window.addEventListener('resize', function() {
                 document.querySelectorAll('.smooth-input').forEach(input => {
                     if (document.activeElement === input) forceUpdate(input);

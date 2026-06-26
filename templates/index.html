@@ -23,7 +23,8 @@
         <button onclick="switchTab('tab-teleport')" id="btn-tab-teleport"> <i class="icon-compass"></i> <span>Телепорт</span></button>
         <button onclick="switchTab('tab-weapons')" id="btn-tab-weapons"> <i class="icon-swords"></i> <span>Оружие</span></button>
         <button onclick="switchTab('tab-characters')" id="btn-tab-characters"> <i class="icon-users-round"></i> <span>Персонажи</span></button>
-        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn"> <i class="icon-egg"></i> <span>Спавн</span></button>
+        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn"> <i class="icon-egg"></i> <span>Спавн монстров</span></button>
+        <button onclick="switchTab('tab-gadgets')" id="btn-tab-gadgets"> <i class="icon-layers-plus"></i> <span>Спавн гаджетов</span></button>
         <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact"> <i class="icon-amphora"></i> <span>Выдать артефакт</span></button>
         <button onclick="switchTab('tab-items')" id="btn-tab-items"> <i class="icon-package"></i> <span>Предметы</span></button>
         <button onclick="switchTab('tab-mail')" id="btn-tab-mail"> <i class="icon-mail"></i> <span>Отправить почту</span></button>
@@ -580,7 +581,6 @@
                     <label>ID Монстра:</label>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="text" id="monster-id-input" placeholder="Например: 20010101" style="flex: 2; min-width: 200px;">
-                        <button class="action-btn secondary" onclick="document.getElementById('monster-id-input').value=''">✖</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -613,7 +613,49 @@
                 </div>
             </div>
         </div>
-        
+
+        <div id="tab-gadgets" class="content-area">
+            <div class="grid-two">
+                <!-- Левая колонка: Карточка спавна гаджетов -->
+                <div>
+                    <div class="card">
+                        <h4><i class="icon-layers-plus"></i> Спавн гаджетов</h4>
+                        <div class="form-group">
+                            <label>Параметры гаджета:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <input type="text" id="gadget-id-input" placeholder="ID" style="flex: 1; min-width: 100px;">
+                                <input type="text" id="gadget-count-input" placeholder="Кол-во" value="1" style="width: 80px;">
+                                <input type="text" id="gadget-args-input" placeholder="Доп. теги" style="flex: 1; min-width: 150px;">
+                            </div>
+                            <div style="font-size: 12px; color: #888; margin-top: 4px;">
+                                <i class="icon-lightbulb"></i> Пример: <code>40000001 1</code>
+                            </div>
+                        </div>
+                        
+                        <button class="action-btn" onclick="spawnGadget()" style="width: 100%; padding: 12px;">
+                            <i class="icon-plus"></i> Спавн гаджет
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Правая колонка: Поиск гаджетов -->
+                <div>
+                    <div class="card" style="background: #161616;">
+                        <h4><i class="icon-search"></i> Поиск гаджетов</h4>
+                        <div class="form-group">
+                            <label>Фильтр (ID или название):</label>
+                            <input type="text" id="gadget-search-input" placeholder="Начните вводить ID или имя гаджета..." oninput="filterGadgetHandbook()">
+                        </div>
+                        <div id="gadget-search-results" style="max-height: 300px; overflow-y: auto; border: 1px solid #2d2d2d; border-radius: 6px; background: #121212; padding: 5px; margin-top: 5px;">
+                            <div style="color: #666; padding: 8px; text-align: center;">Начните ввод для поиска гаджетов...</div>
+                        </div>
+                        <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                            <i class="icon-lightbulb"></i> Нажмите на гаджет, чтобы подставить его ID.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="tab-gm" class="content-area active">
             <div class="grid-two">
                 <div>
