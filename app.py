@@ -11,25 +11,62 @@ import urllib.parse
 import time
 from flask import Flask, render_template, request, jsonify
 
-
-
 app = Flask(__name__)
 
+# ============================================
+# КОНСТАНТЫ
+# ============================================
 CONFIG_PATH = 'data/config.json'
 DATA_FILE = 'data/data.json'
 
-def get_muip_config():
-    """Загрузка конфигурационных данных хоста и секретного ключа для MUIP."""
-    if os.path.exists(CONFIG_PATH):
-        try:
-            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-                return json.load(f)['muip']['dev_docker']
-        except Exception as e:
-            print(f"Предупреждение: Ошибка чтения config.json ({e}). Используются базовые настройки.")
-    return {
-        "host": "http://127.0.0.1:21051",
-        "sign": "9H2UrJ5J4yZJf95FqMkqi628snEmzvyV9oAp"
+DEFAULT_CONFIG = {
+    "app": {
+        "listen": "127.0.0.1",
+        "port": 8483,
+        "debug": False
+    },
+    "muip": {
+        "dev_docker": {
+            "host": "http://127.0.0.1:21051",
+            "sign": "9H2UrJ5J4yZJf95FqMkqi628snEmzvyV9oAp"
+        }
+    },
+    "security": {
+        "ticket_len": 32
     }
+}
+
+# ============================================
+# ФУНКЦИИ РАБОТЫ С КОНФИГОМ
+# ============================================
+
+def load_full_config():
+    """Загрузка полного конфига из файла."""
+    try:
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"⚠️ Ошибка чтения config.json ({e}). Используются дефолтные настройки.")
+        return DEFAULT_CONFIG
+
+def get_app_config():
+    """Получение конфигурации приложения."""
+    config = load_full_config()
+    return config.get('app', DEFAULT_CONFIG['app'])
+
+def get_muip_config():
+    """Получение MUIP конфигурации."""
+    config = load_full_config()
+    return config.get('muip', {}).get('dev_docker', DEFAULT_CONFIG['muip']['dev_docker'])
+
+def get_security_config():
+    """Получение security конфигурации."""
+    config = load_full_config()
+    return config.get('security', DEFAULT_CONFIG['security'])
+
+# ============================================
+# ОСТАЛЬНЫЕ ФУНКЦИИ
+# ============================================
 
 def sha256_sign(secret, message):
     """Генерация хеша подписи по стандарту MUIP сервера."""
@@ -60,7 +97,6 @@ def parse_handbook():
     items = []
     handbook_dir = "data/handbook"
     
-    # Определяем файлы для парсинга
     files_to_parse = {
         "Avatars.txt": "avatar",
         "Items.txt": "item",
@@ -68,7 +104,7 @@ def parse_handbook():
         "Quests.txt": "quest",
         "Scenes.txt": "scene",
         "Gadgets.txt": "gadget",
-        "Drop.txt" : "drop"
+        "Drop.txt": "drop"
     }
     
     seen = set()
@@ -77,41 +113,36 @@ def parse_handbook():
         file_path = os.path.join(handbook_dir, filename)
         
         if not os.path.exists(file_path):
-            print(f"Предупреждение: Файл {file_path} не найден. Пропускаем.")
+            print(f"⚠️ Файл {file_path} не найден. Пропускаем.")
             continue
             
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
                     line = line.strip()
-                    # Пропускаем пустые строки и комментарии
                     if not line or line.startswith('#'):
                         continue
                         
-                    # Ищем строки формата "ID : Name"
                     match = re.match(r'^(\d+)\s*:\s*(.*)', line)
                     if match:
                         item_id = match.group(1)
                         name = match.group(2).strip()
                         
-                        # Проверяем, что такой пары еще не было
                         if (item_id, name) not in seen:
                             seen.add((item_id, name))
                             items.append({
                                 "id": item_id, 
                                 "name": name,
-                                "category": category  # Добавляем категорию для удобства
+                                "category": category
                             })
         except Exception as e:
             print(f"Ошибка парсинга файла {file_path}: {e}")
     
     if not items:
-        print("Предупреждение: Не найдено ни одного файла в data/handbook. Справочник пуст.")
+        print("⚠️ Не найдено ни одного файла в data/handbook. Справочник пуст.")
     
-    # Сортируем по ID для удобства
     items.sort(key=lambda x: int(x['id']) if x['id'].isdigit() else 0)
-    
-    print(f"Загружено {len(items)} записей из справочника")
+    print(f"✅ Загружено {len(items)} записей из справочника")
     return items
 
 def parse_muip_commands():
@@ -120,14 +151,14 @@ def parse_muip_commands():
     path = "data/muip_commands.txt"
     
     if not os.path.exists(path):
-        print(f"Предупреждение: Файл {path} не найден. MUIP команды не загружены.")
+        print(f"⚠️ Файл {path} не найден. MUIP команды не загружены.")
         return commands
     
     try:
         with open(path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith('#'):  # Пропускаем пустые строки и комментарии
+                if not line or line.startswith('#'):
                     continue
                 parts = [p.strip() for p in line.split("=>")]
                 if len(parts) >= 2:
@@ -142,9 +173,13 @@ def parse_muip_commands():
         print(f"Ошибка чтения muip_commands.txt: {e}")
     
     if not commands:
-        print("Предупреждение: Не удалось загрузить ни одной MUIP команды.")
+        print("⚠️ Не удалось загрузить ни одной MUIP команды.")
     
     return commands
+
+# ============================================
+# РОУТЫ
+# ============================================
 
 @app.route('/')
 @app.route('/index.html')
@@ -172,28 +207,24 @@ def execute_muip():
     params = req.get('params', {})
     
     config = get_muip_config()
+    security = get_security_config()
+    ticket_len = security.get('ticket_len', 32)
     
-    # Формируем базовые служебные ключи MUIP запроса
     query_params = {
         "region": "dev_docker",
-        "ticket": "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+        "ticket": "".join(random.choices(string.ascii_letters + string.digits, k=ticket_len)),
         "cmd": cmd_id
     }
     
-    # Записываем пришедшие пользовательские аргументы формы
     for k, v in params.items():
         if v is not None and str(v).strip() != "":
             query_params[str(k)] = str(v)
             
-    # Алфавитная сортировка параметров (КРИТИЧЕСКИ ВАЖНО ДЛЯ ВАЛИДНОСТИ ПОДПИСИ)
     sorted_keys = sorted(query_params.keys())
     kvs = [f"{k}={query_params[k]}" for k in sorted_keys]
     query_string = "&".join(kvs)
     
-    # Хеширование упорядоченной строки запроса и приватного ключа
     sign = sha256_sign(config['sign'], query_string)
-    
-    # Сборка закодированного URL
     quoted_query = urllib.parse.quote_plus(query_string, safe='=&')
     url = f"{config['host']}/api?{quoted_query}&sign={sign}"
     
@@ -207,8 +238,6 @@ def execute_muip():
     except Exception as e:
         return jsonify({"retcode": -1, "message": str(e)}), 500
 
-
-# Получение списка доступных пакетов квестов
 @app.route('/api/quest_packages/list', methods=['GET'])
 def get_quest_packages():
     packages = []
@@ -232,7 +261,6 @@ def get_quest_packages():
     
     return jsonify(packages)
 
-# Загрузка конкретного пакета
 @app.route('/api/quest_packages/load', methods=['POST'])
 def load_quest_package():
     data = request.json
@@ -253,28 +281,27 @@ def load_quest_package():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Выполнение пакета квестов (для кнопки "Подтвердить")
 @app.route('/api/quest_packages/execute_step', methods=['POST'])
 def execute_quest_step():
     data = request.json
     quest_id = data.get('quest_id')
-    action = data.get('action')  # 'accept' или 'finish'
+    action = data.get('action')
     uid = data.get('uid', '1')
     cooldown = data.get('cooldown', 0)
     
     if not quest_id or not action:
         return jsonify({'error': 'Quest ID and action required'}), 400
     
-    # Формируем команду
     cmd = f"quest {action} {quest_id}"
     
-    # Выполняем через sendMuipRequest (используем существующую функцию)
-    # Но для ответа из бэкенда вызываем напрямую MUIP
     try:
         config = get_muip_config()
+        security = get_security_config()
+        ticket_len = security.get('ticket_len', 32)
+        
         query_params = {
             "region": "dev_docker",
-            "ticket": "".join(random.choices(string.ascii_letters + string.digits, k=16)),
+            "ticket": "".join(random.choices(string.ascii_letters + string.digits, k=ticket_len)),
             "cmd": "1116",
             "uid": uid,
             "msg": cmd
@@ -290,7 +317,6 @@ def execute_quest_step():
         
         res = requests.get(url, timeout=5)
         
-        # Если есть cooldown - ждем
         if cooldown > 0:
             time.sleep(cooldown / 1000.0)
         
@@ -303,5 +329,16 @@ def execute_quest_step():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# ============================================
+# ЗАПУСК
+# ============================================
+
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8483, debug=True)
+    app_config = get_app_config()
+    
+    host = app_config.get('listen', '127.0.0.1')
+    port = app_config.get('port', 8483)
+    debug = app_config.get('debug', False)
+    
+    print(f"🚀 Запуск сервера на {host}:{port} (debug={debug})")
+    app.run(host=host, port=port, debug=debug)
