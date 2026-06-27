@@ -150,45 +150,48 @@
         function showNotification(msg, type = "success") {
             const container = document.getElementById('notification-container');
             
-            // Проверяем, существует ли контейнер
-            if (!container) {
-                console.warn('Контейнер уведомлений не найден');
-                return;
-            }
+            if (!container) return;
+
+            // Определяем иконку и заголовок
+            let iconClass = 'icon-check-circle';
+            let title = 'Успешно';
+            let colorClass = '';
             
-            // Определяем иконку в зависимости от типа
-            let icon = '✅';
-            let typeClass = '';
             if (type === 'err') {
-                icon = '❌';
-                typeClass = 'error';
+                iconClass = 'icon-circle-x';
+                title = 'Ошибка';
+                colorClass = 'error';
             } else if (type === 'info') {
-                icon = 'ℹ️';
-                typeClass = 'info';
+                iconClass = 'icon-info';
+                title = 'Информация';
+                colorClass = 'info';
             } else if (type === 'warning') {
-                icon = '⚠️';
-                typeClass = 'warning';
+                iconClass = 'icon-triangle-alert';
+                title = 'Внимание';
+                colorClass = 'warning';
             }
             
-            // Создаём уведомление
-            const notif = document.createElement('div');
-            notif.className = `notification ${typeClass}`;
-            
-            // Форматируем сообщение
             let text = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg;
             if (text.length > 100) {
                 text = text.substring(0, 100) + '...';
             }
             
+            const notif = document.createElement('div');
+            notif.className = `notification ${colorClass}`;
+            
+            // Генерируем правильную структуру с onclick для закрытия
             notif.innerHTML = `
-                <span class="notif-icon">${icon}</span>
-                <span class="notif-text">${text}</span>
                 <button class="notif-close" onclick="this.closest('.notification').remove()">✕</button>
+                <div class="notif-icon"><i class="${iconClass}"></i></div>
+                <div class="notif-content">
+                    <div class="notif-title">${title}</div>
+                    <div class="notif-text">${text}</div>
+                </div>
             `;
             
             container.appendChild(notif);
             
-            // Автоматическое скрытие через 5 секунд
+            // Таймер на автозакрытие через 5 секунд
             setTimeout(() => {
                 if (notif.parentNode) {
                     notif.classList.add('fade-out');
@@ -200,7 +203,6 @@
                 }
             }, 5000);
             
-            // Обновляем бейдж на кнопке консоли
             updateNotifBadge();
         }
 
@@ -598,7 +600,7 @@
         function selectArtifactItem(itemId) {
             document.getElementById('artifact-id').value = itemId;
             document.getElementById('artifact-search').value = '';
-            document.getElementById('artifact-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Артефакт выбран, ID подставлен в поле выше</div>';
+           
         }
 
         function sendArtifact() {
@@ -870,8 +872,8 @@
 
         function selectMonster(id) {
             document.getElementById('monster-id-input').value = id;
-            document.getElementById('monster-search-input').value = '';
-            document.getElementById('monster-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Монстр выбран, ID подставлен в поле выше</div>';
+            
+            
         }
         // ============================================
         // ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ГАДЖЕТАМИ
@@ -966,8 +968,7 @@
 
         function selectDropForGadget(itemId) {
             document.getElementById('gadget-drop-id').value = itemId;
-            document.getElementById('gadget-drop-search').value = '';
-            document.getElementById('gadget-drop-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Таблица выбрана, ID подставлен в поле drop_id</div>';
+
         }
 
         function selectGadget(id) {
@@ -1085,8 +1086,8 @@
 
         function selectWeapon(weaponId) {
             document.getElementById('weapon-id').value = weaponId;
-            document.getElementById('weapon-search').value = '';
-            document.getElementById('weapon-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Оружие выбрано, ID подставлен в поле выше</div>';
+           
+            
         }
 
         function sendWeapon() {
@@ -1136,8 +1137,7 @@
 
         function selectQuest(questId) {
             document.getElementById('quest-id-input').value = questId;
-            document.getElementById('quests-search').value = '';
-            document.getElementById('quests-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Квест выбран, ID подставлен в поле выше</div>';
+           
         }
 
 
@@ -1178,8 +1178,8 @@
 
         function selectCharacter(charId) {
             document.getElementById('char-id').value = charId;
-            document.getElementById('char-search').value = '';
-            document.getElementById('char-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Персонаж выбран, ID подставлен в поле выше</div>';
+           
+            
         }
 
         function addCharacter() {
@@ -1254,8 +1254,8 @@
 
         function selectItem(itemId) {
             document.getElementById('items-id').value = itemId;
-            document.getElementById('items-search').value = '';
-            document.getElementById('items-search-results').innerHTML = '<div style="color: #666; padding: 8px; text-align: center;">Предмет выбран, ID подставлен в поле выше</div>';
+           
+           
         }
 
         function sendItems() {
