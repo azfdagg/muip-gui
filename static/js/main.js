@@ -765,7 +765,7 @@
         }
 
         function sendMail() {
-            const uid = document.getElementById('mail-uid').value.trim() || '1';
+            const uid = document.getElementById('global-uid').value.trim() || '1';
             const title = document.getElementById('mail-title').value.trim() || 'Без заголовка';
             const content = document.getElementById('mail-content').value.trim() || 'Пустое письмо';
             const sender = document.getElementById('mail-sender').value.trim() || 'Паймон';
@@ -796,10 +796,8 @@
                 item_list: item_list
             };
 
-            // Выполняем MUIP команду 1005 с параметрами
             sendMuipRequest('1005', params);
 
-            // Сбрасываем выбор предмета
             document.getElementById('selected-mail-item-id').textContent = '--';
             document.getElementById('selected-mail-item-name').textContent = '--';
         }
