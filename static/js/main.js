@@ -81,7 +81,7 @@
             }
 
             const titleMap = {
-                'tab-gm': 'Быстрые GM Команды',
+                'tab-gm': 'Быстрый старт',
                 'tab-muip': 'Все MUIP Функции Напрямую',
                 'tab-handbook': 'Книга Справочник ID (Handbook)',
                 'tab-settings': 'Настройки Конфигурации',
@@ -179,13 +179,12 @@
             const notif = document.createElement('div');
             notif.className = `notification ${colorClass}`;
             
-            // Генерируем правильную структуру с onclick для закрытия
             notif.innerHTML = `
                 <button class="notif-close" onclick="this.closest('.notification').remove()">✕</button>
                 <div class="notif-icon"><i class="${iconClass}"></i></div>
                 <div class="notif-content">
                     <div class="notif-title">${title}</div>
-                    <div class="notif-text">${text}</div>
+                    <div class="notif-text" style="background: #161616; padding: 6px 10px; border-radius: 8px; border: 1px solid #2c2c2e; font-family: monospace; font-size: 13px; color: #f5f5f7;">${text}</div>
                 </div>
             `;
             
@@ -267,7 +266,6 @@
             const cmdText = input.value.trim();
             if(!cmdText) return;
             quickGm(cmdText);
-            input.value = '';
         }
 
         function quickGm(commandString) {
@@ -1991,3 +1989,21 @@
             setTimeout(animationLoop, 100);
 
         })();
+
+        function addCustomCommandFromInput() {
+            const input = document.getElementById('raw-gm-cmd');
+            const text = input.value.trim();
+            if (!text) {
+                logToTerminal("Введите команду для сохранения.", "err");
+                return;
+            }
+            if (!state.custom_commands) state.custom_commands = [];
+            if (!state.custom_commands.includes(text)) {
+                state.custom_commands.push(text);
+                saveState();
+                renderCustomCommands();
+                logToTerminal(`Команда сохранена: ${text}`, "info");
+            } else {
+                logToTerminal("Команда уже сохранена.", "info");
+            }
+        }

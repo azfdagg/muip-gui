@@ -17,17 +17,17 @@
                 <i class="icon-chevron-left"></i>
             </button>
         </div>
-        <button onclick="switchTab('tab-gm')" id="btn-tab-gm" class="active"> <i class="icon-gauge"></i> <span>Быстрые GM команды</span></button>
+        <button onclick="switchTab('tab-gm')" id="btn-tab-gm" class="active"> <i class="icon-gauge"></i> <span>Быстрый старт</span></button>
         <button onclick="switchTab('tab-player')" id="btn-tab-player"> <i class="icon-person-standing"></i> <span>Игрок</span></button>
+        <button onclick="switchTab('tab-characters')" id="btn-tab-characters"> <i class="icon-users-round"></i> <span>Персонажи</span></button>
+        <button onclick="switchTab('tab-items')" id="btn-tab-items"> <i class="icon-package"></i> <span>Предметы</span></button>
+        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact"> <i class="icon-amphora"></i> <span>Артефакты</span></button>
+        <button onclick="switchTab('tab-weapons')" id="btn-tab-weapons"> <i class="icon-swords"></i> <span>Оружие</span></button>
+        <button onclick="switchTab('tab-mail')" id="btn-tab-mail"> <i class="icon-mail"></i> <span>Почта</span></button>
         <button onclick="switchTab('tab-quests')" id="btn-tab-quests"> <i class="icon-notebook-tabs"></i> <span>Квесты</span></button>
         <button onclick="switchTab('tab-teleport')" id="btn-tab-teleport"> <i class="icon-compass"></i> <span>Телепорт</span></button>
-        <button onclick="switchTab('tab-weapons')" id="btn-tab-weapons"> <i class="icon-swords"></i> <span>Оружие</span></button>
-        <button onclick="switchTab('tab-characters')" id="btn-tab-characters"> <i class="icon-users-round"></i> <span>Персонажи</span></button>
-        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn"> <i class="icon-egg"></i> <span>Спавн монстров</span></button>
-        <button onclick="switchTab('tab-gadgets')" id="btn-tab-gadgets"> <i class="icon-layers-plus"></i> <span>Спавн гаджетов</span></button>
-        <button onclick="switchTab('tab-artifact')" id="btn-tab-artifact"> <i class="icon-amphora"></i> <span>Выдать артефакт</span></button>
-        <button onclick="switchTab('tab-items')" id="btn-tab-items"> <i class="icon-package"></i> <span>Предметы</span></button>
-        <button onclick="switchTab('tab-mail')" id="btn-tab-mail"> <i class="icon-mail"></i> <span>Отправить почту</span></button>
+        <button onclick="switchTab('tab-spawn')" id="btn-tab-spawn"> <i class="icon-egg"></i> <span>Монстры</span></button>
+        <button onclick="switchTab('tab-gadgets')" id="btn-tab-gadgets"> <i class="icon-layers-plus"></i> <span>Гаджеты</span></button>
         <button onclick="switchTab('tab-muip')" id="btn-tab-muip"> <i class="icon-cog"></i> <span>Все MUIP функции</span></button>
         <button onclick="switchTab('tab-handbook')" id="btn-tab-handbook"> <i class="icon-book"></i> <span>Книга ID (Handbook)</span></button>
         <button onclick="switchTab('tab-settings')" id="btn-tab-settings"> <i class="icon-key"></i> <span>Настройки конфига</span></button>
@@ -35,7 +35,7 @@
 
     <div class="main-container">
         <div class="header">
-            <h2 id="current-title">Быстрые GM Команды</h2>
+            <h2 id="current-title">Быстрый старт</h2>
             <div class="global-uid-box">
                 <label for="global-uid">Глобальный UID игрока:</label>
                 <input type="text" id="global-uid" value="1" onchange="syncUidChange()">
@@ -144,6 +144,8 @@
                             <button class="quick-badge" onclick="quickGm('stamina infinite on')"><i class="icon-sparkles"></i> Беск. стамина ВКЛ</button>
                             <button class="quick-badge" onclick="quickGm('stamina infinite off')"><i class="icon-sparkles"></i> Беск. стамина ВЫКЛ</button>
                             <button class="quick-badge" onclick="quickGm('kill self')"><i class="icon-circle-slash-2"></i> Убить себя</button>
+                            <button class="quick-badge" onclick="quickGm('point 3 all')"><i class="icon-book"></i> Разблокировать все точки ТП (3)</button>
+                            <button class="quick-badge" onclick="quickGm('item add all')"><i class="icon-gift"></i> Выдать ВСЕ предметы</button>
                         </div>
                     </div>
                 </div>
@@ -459,7 +461,7 @@
                 <div class="btn-row">
                     <button class="quick-badge" onclick="quickGm('break 6')"><i class="icon-sparkles"></i> Макс. фаза возвышения</button>
                     <button class="quick-badge" onclick="quickGm('level 90')"><i class="icon-snowflake"></i> Максимальный левел персонажа</button>
-                    <button class="quick-badge" onclick="quickGm('skill all 10')"><i class="icon-star"></i> Максимальный талант (способ1)</button>
+                    <button class="quick-badge" onclick="quickGm('skill all 10')"><i class="icon-star"></i> Максимальный талант (способ 1)</button>
                     <button class="quick-badge" onclick="quickGm('skill skill4 10')"><i class="icon-star"></i> Максимальный талант (способ 2)</button>
                     <button class="quick-badge" onclick="quickGm('skill skill3 10')"><i class="icon-star"></i> Максимальный талант (способ 3)</button>
                     <button class="quick-badge" onclick="quickGm('talent unlock all')"><i class="icon-trophy"></i> Разблокировать все созвездия</button>
@@ -659,50 +661,47 @@
             </div>
         </div>
         <div id="tab-gm" class="content-area active">
-            <div class="grid-two">
+            <div class="grid-two" style="grid-template-columns: 1fr 1fr;">
+                <!-- Direct GM input + saved commands -->
                 <div>
                     <div class="card">
-                        <h4>Прямой GM ввод (Команда 1116)</h4>
+                        <h4><i class="icon-terminal"></i> Прямой GM ввод</h4>
                         <div class="form-group">
-                            <label>Введите команду (без косой черты / ):</label>
+                            <label>Введите команду (без /):</label>
                             <input type="text" id="raw-gm-cmd" placeholder="item add 201 10000" onkeydown="if(event.key==='Enter') executeRawGm()">
                         </div>
-                        <button class="action-btn" onclick="executeRawGm()">Отправить на сервер</button>
-                    </div>
-
-                    <div class="card">
-                        <h4>Быстрые переключатели действий</h4>
-                        <div class="btn-row">
-                            <button class="quick-badge" onclick="quickGm('wudi global avatar on')"><i class="icon-shield"></i> Режим бога ВКЛ</button>
-                            <button class="quick-badge" onclick="quickGm('wudi global avatar off')"><i class="icon-x"></i> Режим бога ВЫКЛ</button>
-                            <button class="quick-badge" onclick="quickGm('energy infinite on')"><i class="icon-target"></i> Энергия без КД ВКЛ</button>
-                            <button class="quick-badge" onclick="quickGm('energy infinite off')"><i class="icon-target"></i> Энергия без КД ВЫКЛ</button>
-                            <button class="quick-badge" onclick="quickGm('stamina infinite on')"><i class="icon-sparkles"></i> Бесконечная стамина</button>
-                            <button class="quick-badge" onclick="quickGm('stamina infinite off')"><i class="icon-sparkles"></i> Бесконечная стамина ВЫКЛ</button>
-                            <button class="quick-badge" onclick="quickGm('talent unlock all')"><i class="icon-sparkles"></i> Открыть все созвездия</button>
-                            <button class="quick-badge" onclick="quickGm('point 3 all')"><i class="icon-book"></i> Разблокировать все точки ТП (3)</button>
-                            <button class="quick-badge" onclick="quickGm('item add all')"><i class="icon-gift"></i> Выдать ВСЕ предметы</button>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="action-btn" onclick="executeRawGm()" style="flex: 1;">Отправить</button>
+                            <button class="action-btn secondary" onclick="addCustomCommandFromInput()" style="flex: 1;">Сохранить</button>
+                        </div>
+                        <div id="custom-commands-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+                            <!-- Список сохранённых команд рендерится через renderCustomCommands() -->
                         </div>
                     </div>
                 </div>
-
+                <!-- Welcome card -->
                 <div>
-                    <div class="card">
-                        <h4>Сохранить команду</h4>
-                        <div class="form-group" style="flex-direction:row; gap:10px;">
-                            <input type="text" id="new-custom-cmd" placeholder="avatar add 10000002" style="flex:1;">
-                            <button class="action-btn" onclick="addCustomCommand()">Сохранить</button>
+                    <div class="card" style="display: flex; flex-direction: column;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <i class="icon-gauge" style="font-size: 36px; color: #0a84ff;"></i>
+                            <h4 style="margin: 0; border: none; padding: 0; font-size: 24px;">Добро пожаловать в GIO</h4>
                         </div>
-                        <div id="custom-commands-list" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-top:10px;">
-
+                        <p style="font-size: 15px; line-height: 1.6; color: #ccc; margin: 8px 0 20px 0;">
+                            GUI для управления GIO Docker сервером. Используйте команды, управляйте игроками,
+                            выдавайте предметы, создавайте кастомные гаджеты и все то, что Вы делали раньше.
+                        </p>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <a href="https://teletype.in/@azfdagg/gio-docker-ru" class="action-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="icon-book-open"></i> Руководство
+                            </a>
+                            <a href="https://github.com/azfdagg/muip-gui/" class="action-btn secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                                GitHub
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-
-
-            </div>
 
         <div id="tab-muip" class="content-area">
             <div class="card">
